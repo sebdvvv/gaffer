@@ -117,24 +117,60 @@ varying vec2 texCoords;
 void main()
 {
 	vec4 outColor = texture2D( rgbaTexture, texCoords );
+	// Alpha 0 is a real render result (ray missed, or a light that is
+	// not visible to camera). Leave the cleared viewport background
+	// there. Do not treat it as a hole for OpenGL gizmos to fill.
 	if( outColor.a == 0.0 )
 	{
 		discard;
 	}
 
 	// Input depth is absolute in camera space (completely
-	// unrelated to clipping planes). Convert to the screen
-	// space that `GL_fragDepth` needs.
+	// unrelated to clipping planes). A miss is stored as 0.
+	// Projecting that lands on the camera plane (clip w = 0) and
+	// comes back as a near depth, which then hides every gizmo
+	// drawn afterwards. That is why an Arnold watermark, which
+	// writes alpha into missed pixels and leaves Z at 0, appears
+	// to "force" the beauty through the OpenGL overlay.
 	float depth = texture2D( depthTexture, texCoords ).r;
-	vec4 Pcamera = vec4( 0.0, 0.0, -depth, 1.0 );
-	vec4 Pclip = gl_ProjectionMatrix * Pcamera;
-	float ndcDepth = Pclip.z / Pclip.w;
-	gl_FragDepth = (ndcDepth + 1.0) / 2.0;
+	if( depth <= 0.0 )
+	{
+		gl_FragDepth = 1.0;
+	}
+	else
+	{
+		vec4 Pcamera = vec4( 0.0, 0.0, -depth, 1.0 );
+		vec4 Pclip = gl_ProjectionMatrix * Pcamera;
+		float ndcDepth = Pclip.z / Pclip.w;
+		gl_FragDepth = (ndcDepth + 1.0) / 2.0;
+	}
 
 	if( renderSelection )
 	{
-		unsigned int id = texture2D( idTexture, texCoords ).r;
-		outColor = vec4( 0.466, 0.612, 0.741, 1.0 ) * outColor.a * 0.75 * float( contains( selectionTexture, selectionSize, id ) );
+		// Outline only. Replacing the beauty with a flat colour hides
+		// the shader the viewport is supposed to be showing.
+		ivec2 size = textureSize2D( idTexture, 0 );
+		vec2 sizeF = vec2( float( size.x ), float( size.y ) );
+		ivec2 p = ivec2( clamp( texCoords, vec2( 0.0 ), vec2( 1.0 ) ) * ( sizeF - vec2( 1.0 ) ) );
+		unsigned int id = texelFetch2D( idTexture, p, 0 ).r;
+		if( id == unsigned int( 0 ) || !contains( selectionTexture, selectionSize, id ) )
+		{
+			discard;
+		}
+		int x0 = max( p.x - 1, 0 );
+		int x1 = min( p.x + 1, size.x - 1 );
+		int y0 = max( p.y - 1, 0 );
+		int y1 = min( p.y + 1, size.y - 1 );
+		bool edge =
+			texelFetch2D( idTexture, ivec2( x1, p.y ), 0 ).r != id ||
+			texelFetch2D( idTexture, ivec2( x0, p.y ), 0 ).r != id ||
+			texelFetch2D( idTexture, ivec2( p.x, y1 ), 0 ).r != id ||
+			texelFetch2D( idTexture, ivec2( p.x, y0 ), 0 ).r != id;
+		if( !edge )
+		{
+			discard;
+		}
+		outColor = vec4( 0.466, 0.612, 0.741, 1.0 );
 	}
 	gl_FragColor = outColor;
 }

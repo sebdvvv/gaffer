@@ -378,9 +378,10 @@ void SceneGadget::setRenderer( IECore::InternedString name )
 		{
 			IECore::msg( IECore::Msg::Warning, "SceneGadget::setRenderer", e.what() );
 		}
-		// Stop the OpenGL renderer from rendering objects even if we failed to
-		// make the raytraced renderer. This makes it more obvious that
-		// something went wrong.
+		// The raytracer owns shaded pixels, including alpha. OpenGL objects
+		// and light gizmos drawn on top of that plate (or through pixels
+		// whose alpha is 0) are a second, wrong image. `gl:renderObjects`
+		// also suppresses light and light-filter visualisers.
 		ConstBoolDataPtr renderObjectsData = new BoolData( false );
 		m_renderer->option( "gl:renderObjects", renderObjectsData.get() );
 	}

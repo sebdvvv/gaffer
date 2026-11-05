@@ -698,6 +698,15 @@ class OpenGLObject : public IECoreScenePreview::Renderer::ObjectInterface
 			return attributes.visualisations();
 		}
 
+		/// Light and light-filter gizmos are a second drawing of something
+		/// the raytracer has already resolved into the beauty, including
+		/// alpha. When `gl:renderObjects` is off they must not be drawn,
+		/// or they cover that alpha and show through every missed pixel.
+		virtual bool omitWhenObjectsHidden() const
+		{
+			return false;
+		}
+
 	private :
 
 		// sansScalingAndShear is expensive, so we store that, the other
@@ -807,6 +816,11 @@ class OpenGLLight : public OpenGLObject
 			return attributes.lightVisualisations();
 		}
 
+		bool omitWhenObjectsHidden() const override
+		{
+			return true;
+		}
+
 };
 
 IE_CORE_FORWARDDECLARE( OpenGLLight )
@@ -826,6 +840,11 @@ class OpenGLLightFilter : public OpenGLObject
 		const Visualisations &visualisations( const OpenGLAttributes &attributes ) const override
 		{
 			return attributes.lightFilterVisualisations();
+		}
+
+		bool omitWhenObjectsHidden() const override
+		{
+			return true;
 		}
 
 };
@@ -1229,6 +1248,11 @@ class OpenGLRenderer final : public IECoreScenePreview::Renderer
 			GLuint i = 1;
 			for( const auto &o : m_objects )
 			{
+				if( !m_renderObjects && o->omitWhenObjectsHidden() )
+				{
+					continue;
+				}
+
 				if( selector )
 				{
 					selector->loadName( i++ );
