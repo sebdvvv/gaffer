@@ -129,9 +129,7 @@ void main()
 	// unrelated to clipping planes). A miss is stored as 0.
 	// Projecting that lands on the camera plane (clip w = 0) and
 	// comes back as a near depth, which then hides every gizmo
-	// drawn afterwards. That is why an Arnold watermark, which
-	// writes alpha into missed pixels and leaves Z at 0, appears
-	// to "force" the beauty through the OpenGL overlay.
+	// drawn afterwards.
 	float depth = texture2D( depthTexture, texCoords ).r;
 	if( depth <= 0.0 )
 	{
