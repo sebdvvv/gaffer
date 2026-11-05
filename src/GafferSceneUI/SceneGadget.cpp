@@ -380,8 +380,7 @@ void SceneGadget::setRenderer( IECore::InternedString name )
 		}
 		// Stop the OpenGL renderer from rendering objects even if we failed to
 		// make the raytraced renderer. This makes it more obvious that
-		// something went wrong. Light gizmos stay under the Viewer drawing
-		// menu (`gl:light:drawingMode`, including "none").
+		// something went wrong.
 		ConstBoolDataPtr renderObjectsData = new BoolData( false );
 		m_renderer->option( "gl:renderObjects", renderObjectsData.get() );
 	}
