@@ -166,6 +166,19 @@ vec4 luminance( vec4 c )
 
 vec4 colorTransformWithSolo( vec4 inPixel, bool absoluteValue, bool clipping, vec3 multiply, float power, int soloChannel )
 {
+	// OutputBuffer stores viewport-render coverage as -(1 + coverage):
+	// -1 is a miss, -2 is a solid hit. That keeps a black miss distinct
+	// from a pixel the OpenGL view never drew. Put the real coverage
+	// aside, and give the colour transform an opaque pixel so a camera
+	// visible dome is not treated as transparent.
+	bool viewportRender = inPixel.a < -0.5;
+	float coverage = inPixel.a;
+	if( viewportRender )
+	{
+		coverage = clamp( -inPixel.a - 1.0, 0.0, 1.0 );
+		inPixel.a = 1.0;
+	}
+
 	if( inPixel == vec4( 0.0 ) )
 	{
 		return inPixel;
@@ -207,7 +220,10 @@ vec4 colorTransformWithSolo( vec4 inPixel, bool absoluteValue, bool clipping, ve
 	}
 	else if( soloChannel == 3 )
 	{
-		result = inPixel.aaaa;
+		// Alpha of a viewport render is the coverage the renderer wrote.
+		// A miss, and a dome the camera can see, are 0. Shown opaque so
+		// the gray viewport clear does not read as a mid alpha.
+		result = viewportRender ? vec4( vec3( coverage ), coverage ) : inPixel.aaaa;
 	}
 	else // -2 is for luminance
 	{
@@ -219,6 +235,15 @@ vec4 colorTransformWithSolo( vec4 inPixel, bool absoluteValue, bool clipping, ve
 		if( result.r > 0.0 ) result.r = pow( result.r, power );
 		if( result.g > 0.0 ) result.g = pow( result.g, power );
 		if( result.b > 0.0 ) result.b = pow( result.b, power );
+	}
+
+	// The layer is composited over the gray clear with premultiplied
+	// alpha. The picture is already the final colour, so the output of
+	// this pass is opaque. The alpha channel above is the exception:
+	// its rgb is the coverage, and it is opaque too, so 0 is black.
+	if( viewportRender )
+	{
+		result.a = 1.0;
 	}
 
 	return result;

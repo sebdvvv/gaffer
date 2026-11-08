@@ -122,11 +122,18 @@ void main()
 	// on top. A miss arrives as black with alpha 0. A dome light that
 	// is visible to camera rays arrives as its colour, still with
 	// alpha 0, and the silhouette is already filtered into the
-	// coverage. Write an opaque pixel either way, or the gray shows
-	// through and comes back on every sample.
-	// The flat colour fills a true miss and sits under partial
-	// coverage. It is not added on top of a dome: that washes the
-	// sky and leaves a fringe around the object.
+	// coverage. The flat colour fills a true miss and sits under
+	// partial coverage. It is not added on top of a dome: that washes
+	// the sky and leaves a fringe around the object.
+	//
+	// The picture has to stay opaque, or the gray clear shows through.
+	// The alpha channel has to stay the renderer's coverage, or the
+	// channel selector shows a white frame instead of the EXR alpha.
+	// Those two cannot share one value: a cleared pixel and a black
+	// miss are both (0, 0, 0, 0). Coverage is stored as -(1 + coverage),
+	// which is -1 for a miss and -2 for a solid hit. The display
+	// transform reads that back, shows it in the alpha channel, and
+	// outputs an opaque pixel so the gray stays covered.
 	float coverage = clamp( beauty.a, 0.0, 1.0 );
 	bool environment = coverage <= 0.0 && dot( beauty.rgb, beauty.rgb ) > 1e-8;
 	vec3 color = environment ? beauty.rgb : beauty.rgb + renderBackground * ( 1.0 - coverage );
@@ -176,7 +183,10 @@ void main()
 		}
 		color = vec3( 0.466, 0.612, 0.741 );
 	}
-	gl_FragColor = vec4( color, 1.0 );
+	// Selection is its own layer and must stay a plain opaque outline.
+	// The encoded alpha is only for the beauty, which the display
+	// transform unpacks.
+	gl_FragColor = vec4( color, renderSelection ? 1.0 : -( 1.0 + coverage ) );
 }
 
 )";
@@ -338,8 +348,18 @@ void OutputBuffer::renderInternal( bool renderSelection ) const
 	glPushAttrib( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT );
 
 		glEnable( GL_DEPTH_TEST );
-		glEnable( GL_BLEND );
-		glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+		// Beauty replaces the cleared pixel, including the encoded
+		// alpha. Blending that negative alpha would scale the colour.
+		// The selection outline is opaque and blends as before.
+		if( renderSelection )
+		{
+			glEnable( GL_BLEND );
+			glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
+		}
+		else
+		{
+			glDisable( GL_BLEND );
+		}
 		// The beauty must replace every pixel, including misses. A miss
 		// is stored at the far depth, and GL_LESS rejects that against
 		// the cleared depth buffer, so the gray viewport shows through

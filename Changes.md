@@ -7,6 +7,8 @@ The Viewer clears to gray, then draws the raytraced image on top of that. A ray 
 
 The beauty pass now writes the whole frame, with the default perspective camera as well as a scene camera. Empty space is black. **Render Background** on a StandardOptions node, in the Camera section, sets that colour. A dome light visible to camera rays is shown as the renderer shaded it, not mixed on top of the flat colour. Object edges keep the coverage the renderer already filtered, placed over that background.
 
+The alpha channel matches the EXR. A miss, and a dome the camera can see, are 0, so the alpha view is black there. Objects keep the coverage the renderer wrote. The colour view stays opaque, so the gray viewport does not show through that black alpha.
+
 The colour is the option the renderer was already given. A redraw does not recompute the scene, so the viewport render is not started again on every frame.
 
 ### Light drawing

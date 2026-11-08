@@ -2405,7 +2405,15 @@ in vec2 fragmentuv;
 
 void main()
 {
-	gl_FragColor = texture2D( framebufferTexture, fragmentuv );
+	vec4 c = texture2D( framebufferTexture, fragmentuv );
+	// Same encoding as the display transform. Without one, the colour
+	// is still opaque over the gray clear. The alpha channel itself is
+	// shown by the display transform.
+	if( c.a < -0.5 )
+	{
+		c.a = 1.0;
+	}
+	gl_FragColor = c;
 }
 
 )";
