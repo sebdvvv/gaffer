@@ -1,8 +1,17 @@
 This forked version from 1.7.6.0 
 =======
 
-- Viewport Rendering covers full frame and allows rendering background color aswell as environement objects.
-- Viewport Lights display has a None option to hide them.
+### Viewport rendering
+
+The Viewer clears to gray, then draws the raytraced image on top of that. A ray that hits nothing, and a dome light the camera can see, both come back with no alpha. Those pixels were dropped, so the gray viewport showed through and came back in as new samples arrived. The silhouette broke up the same way.
+
+The beauty pass now writes the whole frame, with the default perspective camera as well as a scene camera. Empty space is black. **Render Background** on a StandardOptions node, in the Camera section, sets that colour. A dome light visible to camera rays is shown as the renderer shaded it, not mixed on top of the flat colour. Object edges keep the coverage the renderer already filtered, placed over that background.
+
+The colour is the option the renderer was already given. A redraw does not recompute the scene, so the viewport render is not started again on every frame.
+
+### Light drawing
+
+**Light Drawing Mode** on OpenGLAttributes has a **None** preset (`gl:light:drawingMode` = `none`). No OpenGL stand-in is drawn for that light. The light itself is unchanged and still lights the render. Wireframe, Color, and Texture behave as before, and Texture stays the default.
 
 
 https://github.com/user-attachments/assets/b169cb28-421a-4737-a996-72f9a8760bb7
