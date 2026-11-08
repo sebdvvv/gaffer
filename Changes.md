@@ -1,3 +1,14 @@
+This forked version from 1.7.6.0 
+=======
+
+- Viewport Rendering covers full frame and allows rendering background color aswell as environement objects.
+- Viewport Lights display has a None option to hide them.
+
+
+https://github.com/user-attachments/assets/b169cb28-421a-4737-a996-72f9a8760bb7
+
+
+
 1.x.x.x (relative to 1.7.x.x)
 =======
 
