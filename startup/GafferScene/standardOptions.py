@@ -261,6 +261,21 @@ Gaffer.Metadata.registerValues( {
 
 	},
 
+	"option:render:backgroundColor" : {
+
+		"defaultValue" : imath.Color3f( 0, 0, 0 ),
+		"description" :
+		"""
+		Colour shown in the viewport render where a ray hits nothing.
+		The viewport itself is gray and sits underneath the render; this
+		colour covers it. Off means black. A dome light that is visible
+		to camera rays is drawn instead of this colour.
+		""",
+		"label" : "Render Background",
+		"layout:section" : "Camera",
+
+	},
+
 	"option:render:defaultRenderer" : {
 
 		"defaultValue" : "",

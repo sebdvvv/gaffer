@@ -78,6 +78,7 @@
 #include "fmt/format.h"
 
 #include <functional>
+#include <mutex>
 #include <unordered_map>
 #include <vector>
 
@@ -849,7 +850,7 @@ class OpenGLRenderer final : public IECoreScenePreview::Renderer
 
 		OpenGLRenderer( RenderType renderType, const std::string &fileName, const IECore::MessageHandlerPtr &messageHandler )
 			:	m_renderType( renderType ), m_baseStateOptions( new CompoundObject ),
-				m_renderObjects( true ), m_messageHandler( messageHandler )
+				m_renderObjects( true ), m_renderBackground( 0.0f ), m_messageHandler( messageHandler )
 		{
 			if( renderType == SceneDescription )
 			{
@@ -911,6 +912,19 @@ class OpenGLRenderer final : public IECoreScenePreview::Renderer
 			else if( name == "gl:renderObjects" )
 			{
 				m_renderObjects = ::option<bool>( value, name, true );
+			}
+			else if( name == "render:backgroundColor" )
+			{
+				// Viewport compositing colour. Not an OpenGL draw option.
+				// Stored here so the viewport can read it without computing
+				// the scene during a redraw.
+				Color3f color( 0.0f );
+				if( const Color3fData *colorData = runTimeCast<const Color3fData>( value ) )
+				{
+					color = colorData->readable();
+				}
+				std::lock_guard<std::mutex> lock( m_renderBackgroundMutex );
+				m_renderBackground = color;
 			}
 			else if( boost::contains( name.string(), ":" ) && !boost::starts_with( name.string(), "gl:" ) )
 			{
@@ -1045,6 +1059,11 @@ class OpenGLRenderer final : public IECoreScenePreview::Renderer
 			{
 				renderToCurrentContext( parameters );
 				return nullptr;
+			}
+			else if( name == "gl:queryRenderBackground" )
+			{
+				std::lock_guard<std::mutex> lock( m_renderBackgroundMutex );
+				return new Color3fData( m_renderBackground );
 			}
 			else if( boost::starts_with( name.string(), "gl:" ) || name.string().find( ":" ) == string::npos )
 			{
@@ -1394,6 +1413,8 @@ class OpenGLRenderer final : public IECoreScenePreview::Renderer
 		IECore::CompoundObjectPtr m_baseStateOptions;
 		IECoreGL::StatePtr m_baseState;
 		bool m_renderObjects;
+		Color3f m_renderBackground;
+		std::mutex m_renderBackgroundMutex;
 
 		IECore::MessageHandlerPtr m_messageHandler;
 

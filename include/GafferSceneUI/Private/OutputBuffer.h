@@ -62,8 +62,9 @@ class OutputBuffer
 		OutputBuffer( IECoreScenePreview::Renderer *renderer );
 		~OutputBuffer();
 
-		/// Renders the output buffers to OpenGL.
-		void render() const;
+		/// Renders the output buffers to OpenGL. `background` fills pixels
+		/// the renderer did not cover, so the viewport clear cannot show through.
+		void render( const Imath::Color3f &background = Imath::Color3f( 0.0f ) ) const;
 		/// Renders an overlay showing the selected objects.
 		void renderSelection() const;
 
@@ -120,6 +121,7 @@ class OutputBuffer
 		mutable int m_selectionTextureSize;
 		mutable IECoreGL::ShaderPtr m_shader;
 		mutable IECoreGL::Shader::SetupPtr m_shaderSetup;
+		mutable Imath::Color3f m_background;
 
 };
 

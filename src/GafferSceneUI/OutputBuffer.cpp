@@ -111,19 +111,25 @@ uniform usampler2D idTexture;
 uniform usampler2D selectionTexture;
 uniform int selectionSize;
 uniform bool renderSelection;
+uniform vec3 renderBackground;
 
 varying vec2 texCoords;
 
 void main()
 {
-	vec4 outColor = texture2D( rgbaTexture, texCoords );
-	// Alpha 0 is a real render result (ray missed, or a light that is
-	// not visible to camera). Leave the cleared viewport background
-	// there. Do not treat it as a hole for OpenGL gizmos to fill.
-	if( outColor.a == 0.0 )
-	{
-		discard;
-	}
+	vec4 beauty = texture2D( rgbaTexture, texCoords );
+	// The viewport is cleared to gray before this layer is composited
+	// on top. A miss arrives as black with alpha 0. A dome light that
+	// is visible to camera rays arrives as its colour, still with
+	// alpha 0, and the silhouette is already filtered into the
+	// coverage. Write an opaque pixel either way, or the gray shows
+	// through and comes back on every sample.
+	// The flat colour fills a true miss and sits under partial
+	// coverage. It is not added on top of a dome: that washes the
+	// sky and leaves a fringe around the object.
+	float coverage = clamp( beauty.a, 0.0, 1.0 );
+	bool environment = coverage <= 0.0 && dot( beauty.rgb, beauty.rgb ) > 1e-8;
+	vec3 color = environment ? beauty.rgb : beauty.rgb + renderBackground * ( 1.0 - coverage );
 
 	// Input depth is absolute in camera space (completely
 	// unrelated to clipping planes). A miss is stored as 0.
@@ -168,9 +174,9 @@ void main()
 		{
 			discard;
 		}
-		outColor = vec4( 0.466, 0.612, 0.741, 1.0 );
+		color = vec3( 0.466, 0.612, 0.741 );
 	}
-	gl_FragColor = outColor;
+	gl_FragColor = vec4( color, 1.0 );
 }
 
 )";
@@ -182,7 +188,7 @@ void main()
 //////////////////////////////////////////////////////////////////////////
 
 OutputBuffer::OutputBuffer( IECoreScenePreview::Renderer *renderer )
-	:	m_texturesDirty( false ), m_selectionTextureSize( 0 )
+	:	m_texturesDirty( false ), m_selectionTextureSize( 0 ), m_background( 0.0f )
 {
 	IECoreScene::OutputPtr outputTemplate = new IECoreScene::Output( "", "ieDisplay", "" );
 	outputTemplate->parameters()["driverType"] = new IECore::StringData( "OutputBuffer::DisplayDriver" );
@@ -221,8 +227,9 @@ OutputBuffer::~OutputBuffer()
 {
 }
 
-void OutputBuffer::render() const
+void OutputBuffer::render( const Color3f &background ) const
 {
+	m_background = background;
 	renderInternal( /* renderSelection = */ false );
 }
 
@@ -323,13 +330,23 @@ void OutputBuffer::renderInternal( bool renderSelection ) const
 
 	glUniform1i( m_shader->uniformParameter( "renderSelection" )->location, renderSelection );
 	glUniform1i( m_shader->uniformParameter( "selectionSize" )->location, m_selectionTextureSize );
+	glUniform3f(
+		m_shader->uniformParameter( "renderBackground" )->location,
+		m_background[0], m_background[1], m_background[2]
+	);
 
 	glPushAttrib( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_ENABLE_BIT );
 
 		glEnable( GL_DEPTH_TEST );
 		glEnable( GL_BLEND );
 		glBlendFunc( GL_ONE, GL_ONE_MINUS_SRC_ALPHA );
-		glDepthFunc( renderSelection ? GL_LEQUAL : GL_LESS );
+		// The beauty must replace every pixel, including misses. A miss
+		// is stored at the far depth, and GL_LESS rejects that against
+		// the cleared depth buffer, so the gray viewport shows through
+		// and flickers back in as samples arrive. Depth is still written
+		// for the gizmos drawn afterwards. Selection keeps GL_LEQUAL so
+		// the outline sits on the surface it belongs to.
+		glDepthFunc( renderSelection ? GL_LEQUAL : GL_ALWAYS );
 
 		glDrawArrays( GL_TRIANGLE_FAN, 0, 4 );
 

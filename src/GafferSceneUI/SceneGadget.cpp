@@ -184,6 +184,28 @@ namespace
 const ConstStringDataPtr g_cameraName = new StringData( "/__sceneGadget:camera" );
 const IECore::StringDataPtr g_sceneColorSpace = new StringData( "scene" );
 const IECore::StringDataPtr g_displayColorSpace = new StringData( "display" );
+const InternedString g_queryRenderBackgroundCommand( "gl:queryRenderBackground" );
+
+Color3f renderBackgroundColor( IECoreScenePreview::Renderer *renderer )
+{
+	// Black until a StandardOptions node enables Render Background.
+	// The colour is stored when the renderer receives the option, during
+	// the scene update. Reading the scene globals here would run on the
+	// UI thread during the draw and cancel that update, so the viewport
+	// render would restart on every redraw and never settle.
+	Color3f color( 0.0f );
+	if( !renderer )
+	{
+		return color;
+	}
+	IECore::CompoundDataMap parameters;
+	ConstDataPtr data = renderer->command( g_queryRenderBackgroundCommand, parameters );
+	if( const Color3fData *colorData = runTimeCast<const Color3fData>( data.get() ) )
+	{
+		color = colorData->readable();
+	}
+	return color;
+}
 
 } // namespace
 
@@ -875,7 +897,7 @@ void SceneGadget::renderLayer( Layer layer, const GafferUI::Style *style, Render
 	{
 		if( layer == m_layer )
 		{
-			m_outputBuffer->render();
+			m_outputBuffer->render( renderBackgroundColor( m_renderer.get() ) );
 		}
 		else
 		{

@@ -75,6 +75,11 @@ def __cameraSummary( plug ) :
 		info.append( "Overscan %s" % ( "On" if plug["render:overscan"]["value"].getValue() else "Off" ) )
 	if plug["render:depthOfField"]["enabled"].getValue() :
 		info.append( "DOF " + ( "On" if plug["render:depthOfField"]["value"].getValue() else "Off" ) )
+	if plug["render:backgroundColor"]["enabled"].getValue() :
+		color = plug["render:backgroundColor"]["value"].getValue()
+		info.append( "Background %s %s %s" % tuple(
+			GafferUI.NumericWidget.valueToString( x ) for x in ( color[0], color[1], color[2] )
+		) )
 
 	return ", ".join( info )
 
