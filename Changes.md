@@ -12,9 +12,11 @@ The alpha channel matches "final pixels" output.
 **Light Drawing Mode** on OpenGLAttributes has a **None** preset (`gl:light:drawingMode` = `none`). No OpenGL stand-in is drawn for that light. The light itself is unchanged and still lights the render. Wireframe, Color, and Texture behave as before, and Texture stays the default.
 
 Arnold Skydome Light full frame viewport render example : 
+
 https://github.com/user-attachments/assets/b169cb28-421a-4737-a996-72f9a8760bb7
 
 Arnold Skydome Light full frame alpha/camera contribution relationship  : 
+
 https://github.com/user-attachments/assets/b51ba33f-8229-4ecb-b78c-b9dabed734a6
 
 1.x.x.x (relative to 1.7.x.x)
