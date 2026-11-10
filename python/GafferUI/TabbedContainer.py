@@ -43,9 +43,9 @@ import IECore
 import Gaffer
 import GafferUI
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 class TabbedContainer( GafferUI.ContainerWidget ) :
 
@@ -68,7 +68,7 @@ class TabbedContainer( GafferUI.ContainerWidget ) :
 		self.__tabBarDragState = self.__DragState.None_
 
 		self._qtWidget().setTabBar( self.__tabBar._qtWidget() )
-		self._qtWidget().setElideMode( QtCore.Qt.ElideNone )
+		self._qtWidget().setElideMode( QtCore.Qt.TextElideMode.ElideNone )
 
 		# Corner widget and scrolling
 		# ---------------------------
@@ -340,7 +340,7 @@ class _TabWidget( QtWidgets.QTabWidget ) :
 
 		result = QtWidgets.QTabWidget.sizeHint( self )
 		if self.tabBar().isHidden() :
-			if self.tabPosition() in ( self.North, self.South ) :
+			if self.tabPosition() in ( QtWidgets.QTabWidget.TabPosition.North, QtWidgets.QTabWidget.TabPosition.South ) :
 				result.setHeight( result.height() - self.tabBar().sizeHint().height() )
 			else :
 				result.setWidth( result.width() - self.tabBar().sizeHint().width() )
@@ -353,7 +353,7 @@ class _TabWidget( QtWidgets.QTabWidget ) :
 
 		result = QtWidgets.QTabWidget.minimumSizeHint( self )
 		if self.tabBar().isHidden() :
-			if self.tabPosition() in ( self.North, self.South ) :
+			if self.tabPosition() in ( QtWidgets.QTabWidget.TabPosition.North, QtWidgets.QTabWidget.TabPosition.South ) :
 				result.setHeight( result.height() - self.tabBar().minimumSizeHint().height() )
 			else :
 				result.setWidth( result.width() - self.tabBar().minimumSizeHint().width() )
@@ -373,8 +373,7 @@ class _VisibilityLink( QtCore.QObject ) :
 
 	def eventFilter( self, qObject, qEvent ) :
 
-		qEventType = qEvent.type()
-		if qEventType == qEvent.Show or qEventType == qEvent.Hide :
+		if qEvent.type() in ( QtCore.QEvent.Type.Show, QtCore.QEvent.Type.Hide ) :
 			self.parent().setVisible( qObject.isVisible() )
 
 		return False

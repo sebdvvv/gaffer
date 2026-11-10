@@ -47,10 +47,9 @@ import IECore
 import Gaffer
 import GafferUI
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
-import Qt
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 class CompoundEditor( GafferUI.Editor ) :
 
@@ -587,8 +586,8 @@ class _TabbedContainer( GafferUI.TabbedContainer ) :
 		self.dropSignal().connect( Gaffer.WeakMethod( self.__drop ) )
 
 		tabBar = self._qtWidget().tabBar()
-		tabBar.setProperty( "gafferHasTabCloseButtons", GafferUI._Variant.toVariant( True ) )
-		tabBar.setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
+		tabBar.setProperty( "gafferHasTabCloseButtons", True )
+		tabBar.setContextMenuPolicy( QtCore.Qt.ContextMenuPolicy.CustomContextMenu )
 		tabBar.customContextMenuRequested.connect( Gaffer.WeakMethod( self.__tabContextMenu ) )
 
 		self.__tabDragBehaviour = _TabDragBehaviour( self )
@@ -648,17 +647,17 @@ class _TabbedContainer( GafferUI.TabbedContainer ) :
 			if not tabsVisible :
 				# Fix height so timeline is not resizable
 				self._qtWidget().setFixedHeight( self[0]._qtWidget().sizeHint().height() )
-				self.parent()._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Fixed )
+				self.parent()._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Fixed )
 			else :
 				# Undo the above
-				QWIDGETSIZE_MAX = 16777215 # Macro not exposed by Qt.py, but needed to remove fixed height
+				QWIDGETSIZE_MAX = 16777215 # Macro not exposed by PySide, but needed to remove fixed height
 				self._qtWidget().setFixedHeight( QWIDGETSIZE_MAX )
-				self.parent()._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Ignored, QtWidgets.QSizePolicy.Ignored )
+				self.parent()._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Policy.Ignored, QtWidgets.QSizePolicy.Policy.Ignored )
 
 	def __updateStyles( self ) :
 
 		# Had issues using ints
-		self._qtWidget().setProperty( "gafferNumChildren", GafferUI._Variant.toVariant( "%d" % len(self) ) )
+		self._qtWidget().setProperty( "gafferNumChildren", "%d" % len( self ) )
 		self._repolish()
 
 	def __configureTab( self, editor ) :
@@ -675,7 +674,7 @@ class _TabbedContainer( GafferUI.TabbedContainer ) :
 		)
 
 		tabIndex = self.index( editor )
-		self._qtWidget().tabBar().setTabButton( tabIndex, QtWidgets.QTabBar.RightSide, button._qtWidget() )
+		self._qtWidget().tabBar().setTabButton( tabIndex, QtWidgets.QTabBar.ButtonPosition.RightSide, button._qtWidget() )
 
 	def __layoutMenuDefinition( self ) :
 
@@ -1004,9 +1003,9 @@ class _TabDragBehaviour( QtCore.QObject ) :
 		QtCore.QObject.__init__( self )
 
 		self.__eventMask = set( (
-			QtCore.QEvent.MouseButtonPress,
-			QtCore.QEvent.MouseButtonRelease,
-			QtCore.QEvent.MouseMove
+			QtCore.QEvent.Type.MouseButtonPress,
+			QtCore.QEvent.Type.MouseButtonRelease,
+			QtCore.QEvent.Type.MouseMove
 		) )
 
 		self.__tabbedContainer = weakref.ref( tabbedContainer )
@@ -1056,15 +1055,16 @@ class _TabDragBehaviour( QtCore.QObject ) :
 		if qEventType not in self.__eventMask :
 			return False
 
-		if qEventType == qEvent.MouseButtonPress :
+		eventTypes = QtCore.QEvent.Type
+		if qEventType == eventTypes.MouseButtonPress :
 
 			return self.__mousePress( qObject, qEvent )
 
-		elif qEventType == qEvent.MouseMove :
+		elif qEventType == eventTypes.MouseMove :
 
 			return self.__mouseMove( qObject, qEvent )
 
-		elif qEventType == qEvent.MouseButtonRelease :
+		elif qEventType == eventTypes.MouseButtonRelease :
 
 			return self.__mouseRelease( qObject, qEvent )
 
@@ -1078,7 +1078,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 		if not isinstance( qTabBar, QtWidgets.QTabBar ) :
 			return False
 
-		if event.button() != QtCore.Qt.LeftButton :
+		if event.button() != QtCore.Qt.MouseButton.LeftButton :
 			return False
 
 		self.__initializeDragState( qTabBar )
@@ -1092,7 +1092,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 		# Ensure we can leave the UI in a predictable state for the user
 		# post-drag.
 
-		self.__draggedTabOriginalIndex = qTabBar.tabAt( event.position().toPoint() if Qt.__binding__ == "PySide6" else event.pos() )
+		self.__draggedTabOriginalIndex = qTabBar.tabAt( event.position().toPoint() )
 		if self.__draggedTabOriginalIndex == -1 :
 			return False
 
@@ -1113,7 +1113,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 
 	def __mouseRelease( self, _, event ) :
 
-		if event.button() != QtCore.Qt.LeftButton :
+		if event.button() != QtCore.Qt.MouseButton.LeftButton :
 			return False
 
 		if not self.__qTabBar :
@@ -1182,7 +1182,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 
 	def __mouseMove( self, _, event ):
 
-		if not event.buttons() & QtCore.Qt.LeftButton :
+		if not event.buttons() & QtCore.Qt.MouseButton.LeftButton :
 			return False
 
 		if not self.__qTabBar :
@@ -1287,7 +1287,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 	def __shouldAbortInitialRearrange( self, qTabBar, event ) :
 
 		# We don't reliably know where this event comes from
-		pos = qTabBar.mapFromGlobal( event.globalPosition().toPoint() if Qt.__binding__ == "PySide6" else event.globalPos() )
+		pos = qTabBar.mapFromGlobal( event.globalPosition().toPoint() )
 
 		if qTabBar.geometry().contains( pos ) :
 			return False
@@ -1305,11 +1305,11 @@ class _TabDragBehaviour( QtCore.QObject ) :
 		# So they will already be in their correct places.
 
 		fakeReleaseEvent = QtGui.QMouseEvent(
-			QtCore.QEvent.MouseButtonRelease,
-			self.__constrainGlobalPosTo( moveEvent.globalPosition().toPoint() if Qt.__binding__ == "PySide6" else moveEvent.globalPos(), self.__qTabBar ),
-			moveEvent.globalPosition() if Qt.__binding__ == "PySide6" else moveEvent.screenPos(),
-			QtCore.Qt.LeftButton, QtCore.Qt.LeftButton,
-			QtCore.Qt.NoModifier
+			QtCore.QEvent.Type.MouseButtonRelease,
+			self.__constrainGlobalPosTo( moveEvent.globalPosition().toPoint(), self.__qTabBar ),
+			moveEvent.globalPosition(),
+			QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.LeftButton,
+			QtCore.Qt.KeyboardModifier.NoModifier
 		)
 		self.__qTabBar.mouseReleaseEvent( fakeReleaseEvent )
 
@@ -1318,8 +1318,8 @@ class _TabDragBehaviour( QtCore.QObject ) :
 		modifiedEvent = QtGui.QMouseEvent(
 			event.type(),
 			# Keep the mouse in sensible bounds to prevent tab clipping
-			self.__constrainGlobalPosTo( event.globalPosition().toPoint() if Qt.__binding__ == "PySide6" else event.globalPos(), self.__qTabBar ),
-			event.globalPosition() if Qt.__binding__ == "PySide6" else event.screenPos(),
+			self.__constrainGlobalPosTo( event.globalPosition().toPoint(), self.__qTabBar ),
+			event.globalPosition(),
 			event.button(), event.buttons(),
 			event.modifiers()
 		)
@@ -1331,7 +1331,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 		# space) such that when the user drags left/right the left/right edges
 		# of the tab never leave the TabBar.
 		barRect = qTabBar.rect()
-		position = event.position().toPoint() if Qt.__binding__ == "PySide6" else event.pos()
+		position = event.position().toPoint()
 		tabRect = qTabBar.tabRect( qTabBar.tabAt( position ) )
 		mouseX = position.x()
 
@@ -1347,7 +1347,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 
 	def __targetUnderMouse( self, event ) :
 
-		globalPosition = event.globalPosition().toPoint() if Qt.__binding__ == "PySide6" else event.globalPos()
+		globalPosition = event.globalPosition().toPoint()
 		mousePos = imath.V2i( globalPosition.x(), globalPosition.y() )
 		target = GafferUI.Widget.widgetAt( mousePos, _TabbedContainer )
 
@@ -1378,11 +1378,7 @@ class _TabDragBehaviour( QtCore.QObject ) :
 
 		if qWindow is None :
 			return
-		# Some versions of PySide2 dont suffix 'raise', lol
-		if hasattr( qWindow, 'raise_' ) :
-			qWindow.raise_()
-		elif hasattr( qWindow, 'raise' ) :
-			getattr( qWindow, 'raise' )()
+		qWindow.raise_()
 
 	@staticmethod
 	def __getTabCenter( targetTab ) :
@@ -1432,7 +1428,7 @@ def _getWindowState( gafferWindow ) :
 	return {
 		"screen" :  widgetScreenNumber,
 		"fullScreen" : gafferWindow.getFullScreen(),
-		"maximized" : bool(window.windowState() & QtCore.Qt.WindowMaximized),
+		"maximized" : bool(window.windowState() & QtCore.Qt.WindowState.WindowMaximized),
 		# As we're bottom-left not top-left the y values are the other way around
 		"bound" : imath.Box2f( imath.V2f( x, y - h ), imath.V2f( x + w, y ) )
 	}
@@ -1452,11 +1448,11 @@ def _restoreWindowState( gafferWindow, boundData ) :
 			window.setScreen( targetScreen )
 
 	if boundData["fullScreen"] :
-		window.setWindowState( QtCore.Qt.WindowFullScreen )
+		window.setWindowState( QtCore.Qt.WindowState.WindowFullScreen )
 	elif boundData["maximized"] and sys.platform != "darwin" :
-		window.setWindowState( QtCore.Qt.WindowMaximized )
+		window.setWindowState( QtCore.Qt.WindowState.WindowMaximized )
 	else :
-		window.setWindowState( QtCore.Qt.WindowNoState )
+		window.setWindowState( QtCore.Qt.WindowState.WindowNoState )
 		screenGeom = targetScreen.availableGeometry()
 		window.setGeometry(
 			( boundData["bound"].min()[0] * screenGeom.width() ) + screenGeom.x(),

@@ -360,13 +360,19 @@ void OutputBuffer::renderInternal( bool renderSelection ) const
 		{
 			glDisable( GL_BLEND );
 		}
-		// The beauty must replace every pixel, including misses. A miss
-		// is stored at the far depth, and GL_LESS rejects that against
-		// the cleared depth buffer, so the gray viewport shows through
-		// and flickers back in as samples arrive. Depth is still written
-		// for the gizmos drawn afterwards. Selection keeps GL_LEQUAL so
-		// the outline sits on the surface it belongs to.
-		glDepthFunc( renderSelection ? GL_LEQUAL : GL_ALWAYS );
+		// GL_LEQUAL rather than GL_LESS. The depth buffer is cleared to
+		// the far plane, and both of these land on that same value :
+		//
+		// 1. Arnold renders volumes with maximum depth. GL_LESS rejects
+		//    them, so a VDB never appears over the cleared buffer.
+		// 2. A miss is stored at the far depth. GL_LESS rejects that too,
+		//    and the gray viewport shows through as samples arrive.
+		//
+		// The selection outline is drawn over the beauty at the same
+		// depth, so an equal depth has to pass there as well. Depth is
+		// still written, so a closer surface wins and later gizmos are
+		// hidden by it.
+		glDepthFunc( GL_LEQUAL );
 
 		glDrawArrays( GL_TRIANGLE_FAN, 0, 4 );
 

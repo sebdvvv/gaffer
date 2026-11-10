@@ -46,17 +46,20 @@ Improvements
     - Added `ai:` prefix to tweaks parameter names created from the menu.
     - Changed tweak plug names to match the parameter name it tweaks.
     - Added `ai:aperture_aspect_ratio` preset menu item.
+- Outputs : Default output presets are now registered in the modules for each renderer, making them available outside of the GUI (#6403).
 
 Fixes
 -----
 
 - Collect : Fixed creation of context variables with no name, if either `contextVariable` or `indexContextVariable` were empty.
 - Viewer : Fixed crashes on macOS when using Arnold, Cycles or 3Delight as the viewport renderer.
+- Enums : Fixed conversion of `QtCore.Qt.AlignmentFlag.AlignJustify`.
 
 API
 ---
 
 - SceneAlgo : Functions for parallel scene traversal no longer require functors to be l-values, allowing lambdas to be passed inline.
+- GafferUI : Qt is now accessed directly via PySide6 rather than via Qt.py. Qt.py is still provided, but will be removed in a future release.
 
 Breaking Changes
 ----------------
@@ -81,6 +84,38 @@ Breaking Changes
 - Serialisation :
   - Removed deprecated `postSerialisationSignal()`.
   - Renamed `staticPostSerialisationSignal()` to `postSerialisationSignal()`.
+- PySide : Removed `PYSIDE63_OPTION_PYTHON_ENUM=0x08` override at startup.
+- RenderMan : Removed support for RenderMan 26.3 and 26.4.
+- Merge : Renamed `Mode` to `InputMode`.
+- GafferUI :
+  - Removed legacy compatibility code for PySide2 and PyQt.
+  - Removed `_Variant` class.
+
+Build
+-----
+
+- C++ : Updated to C++20.
+- GCC : Updated to 14.2.1 for Linux builds.
+- Boost : Updated to version 1.88.0.
+- Fmt : Updated to version 12.1.0.
+- FreeType : Updated to version 2.14.3.
+- Imath : Updated to version 3.2.3.
+- LibFFI : Updated to version 3.8.0.
+- LibPNG : Updated to version 1.6.59.
+- LLVM : Updated to version 20.1.8.
+- MarkupSafe : Updated to version 3.0.4.
+- OpenEXR : Updated to version 3.4.16.
+- OpenShadingLanguage : Updated to version 1.14.11.0.
+- OpenSubdiv : Updated to version 3.7.0.
+- OpenVDB : Updated to version 13.1.0.
+- PySide : Updated to version 6.8.5.
+- Python : Updated to version 3.13.16.
+- Qt :
+  - Updated to version 6.8.5.
+  - Raised minimum required version to Qt 6.
+- TBB : Updated to version 2022.3.0.
+- ZLib : Updated to version 1.3.1.
+- Windows : Updated Windows SDK to version 10.0.22621.0.
 
 1.7.x.x (relative to 1.7.6.0)
 =======
@@ -89,12 +124,21 @@ Improvements
 ------------
 
 - DeepMerge : Added `Collect` mode to accumulate inputs by evaluating input plugs in multiple contexts.
+- MeshSegments : Added `ignoreMissing` plug.
 
 Fixes
 -----
 
 - Catalogue : Fixed `imageNames` plug not handling renaming of promoted images (#7234).
 - ImageAlgo : Fixed handling of empty data window in `tiles()`.
+- Editor : Exceptions thrown by slots connected to `instanceCreatedSignal()` are now caught and reported, rather than stopping execution.
+- RenderMan : Fixed non-deterministic ordering of output definitions.
+- Viewer : Fixed rendering of volumes and camera-visible environment lights in the raytraced viewport (#4783).
+
+API
+---
+
+- Merge : Renamed `mode` to `inputMode`.
 
 1.7.6.0 (relative to 1.7.5.0)
 =======

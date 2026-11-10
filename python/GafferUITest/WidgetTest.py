@@ -35,11 +35,8 @@
 #
 ##########################################################################
 
-import unittest
 import weakref
-import sys
 import imath
-import os
 
 import IECore
 
@@ -49,9 +46,9 @@ import GafferTest
 import GafferUI
 import GafferUITest
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 class TestWidget( GafferUI.Widget ) :
 
@@ -183,7 +180,7 @@ class WidgetTest( GafferUITest.TestCase ) :
 
 		WidgetTest.signalsEmitted = 0
 
-		event = QtGui.QMouseEvent( QtCore.QEvent.MouseButtonPress, QtCore.QPoint( 0, 0 ), QtCore.QPoint( 0, 0 ), QtCore.Qt.LeftButton, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier )
+		event = QtGui.QMouseEvent( QtCore.QEvent.Type.MouseButtonPress, QtCore.QPoint( 0, 0 ), QtCore.QPoint( 0, 0 ), QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.KeyboardModifier.NoModifier )
 
 		QtWidgets.QApplication.instance().sendEvent( w._qtWidget(), event )
 		self.assertEqual( WidgetTest.signalsEmitted, 1 )
@@ -402,7 +399,6 @@ class WidgetTest( GafferUITest.TestCase ) :
 		w.setHighlighted( False )
 		self.assertEqual( w.getHighlighted(), False )
 
-	@unittest.skipIf( os.name == "nt", "Skip failing Windows tests temporarily" )
 	def testWidgetAt( self ) :
 
 		with GafferUI.Window() as w1 :
@@ -417,12 +413,13 @@ class WidgetTest( GafferUITest.TestCase ) :
 		w1.setPosition( imath.V2i( 100 ) )
 		w2.setPosition( imath.V2i( 300 ) )
 
-		self.waitForIdle( 15000 )
+		def assertWidgetsAt() :
+			self.assertTrue( GafferUI.Widget.widgetAt( w1.bound().center() ) is t1 )
+			self.assertTrue( GafferUI.Widget.widgetAt( w2.bound().center() ) is t2 )
+			self.assertTrue( GafferUI.Widget.widgetAt( w1.bound().center(), widgetType=GafferUI.Window ) is w1 )
+			self.assertTrue( GafferUI.Widget.widgetAt( w2.bound().center(), widgetType=GafferUI.Window ) is w2 )
 
-		self.assertTrue( GafferUI.Widget.widgetAt( w1.bound().center() ) is t1 )
-		self.assertTrue( GafferUI.Widget.widgetAt( w2.bound().center() ) is t2 )
-		self.assertTrue( GafferUI.Widget.widgetAt( w1.bound().center(), widgetType=GafferUI.Window ) is w1 )
-		self.assertTrue( GafferUI.Widget.widgetAt( w2.bound().center(), widgetType=GafferUI.Window ) is w2 )
+		self.assertEventually( lambda : assertWidgetsAt() )
 
 	def testMousePosition( self ) :
 
@@ -617,6 +614,6 @@ class WidgetTest( GafferUITest.TestCase ) :
 
 		w.buttonPressSignal().connect( f )
 
-		event = QtGui.QMouseEvent( QtCore.QEvent.MouseButtonPress, QtCore.QPoint( 10, 10 ), QtCore.QPoint( 10, 10 ), QtCore.Qt.LeftButton, QtCore.Qt.LeftButton, QtCore.Qt.NoModifier )
+		event = QtGui.QMouseEvent( QtCore.QEvent.Type.MouseButtonPress, QtCore.QPoint( 10, 10 ), QtCore.QPoint( 10, 10 ), QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.MouseButton.LeftButton, QtCore.Qt.KeyboardModifier.NoModifier )
 
 		QtWidgets.QApplication.instance().sendEvent( w._qtWidget(), event )

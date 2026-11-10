@@ -43,9 +43,9 @@ import IECore
 import Gaffer
 import GafferUI
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 class Slider( GafferUI.Widget ) :
 
@@ -589,8 +589,8 @@ class _Widget( QtWidgets.QWidget ) :
 
 		QtWidgets.QWidget.__init__( self, parent )
 
-		self.setSizePolicy( QtWidgets.QSizePolicy( QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Fixed ) )
-		self.setFocusPolicy( QtCore.Qt.ClickFocus )
+		self.setSizePolicy( QtWidgets.QSizePolicy( QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Fixed ) )
+		self.setFocusPolicy( QtCore.Qt.FocusPolicy.ClickFocus )
 
 	def sizeHint( self ) :
 
@@ -601,17 +601,17 @@ class _Widget( QtWidgets.QWidget ) :
 		owner = GafferUI.Widget._owner( self )
 
 		painter = QtGui.QPainter( self )
-		painter.setRenderHint( QtGui.QPainter.Antialiasing )
+		painter.setRenderHint( QtGui.QPainter.RenderHint.Antialiasing )
 
 		owner._Slider__draw( painter )
 
 	def event( self, event ) :
 
-		if event.type() == event.ShortcutOverride :
-			if event.key() in ( QtCore.Qt.Key_Delete, QtCore.Qt.Key_Backspace ) :
+		if event.type() == QtCore.QEvent.Type.ShortcutOverride :
+			if event.key() in ( QtCore.Qt.Key.Key_Delete, QtCore.Qt.Key.Key_Backspace ) :
 				event.accept()
 				return True
-			if event.key() in ( QtCore.Qt.Key_Up, QtCore.Qt.Key_Down, QtCore.Qt.Key_Left, QtCore.Qt.Key_Right ) :
+			if event.key() in ( QtCore.Qt.Key.Key_Up, QtCore.Qt.Key.Key_Down, QtCore.Qt.Key.Key_Left, QtCore.Qt.Key.Key_Right ) :
 				if GafferUI.Widget._owner( self ).getIncrement() != 0 :
 					event.accept()
 					return True

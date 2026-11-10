@@ -46,10 +46,9 @@ import Gaffer
 import GafferUI
 from ._StyleSheet import _styleSheet
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
-import Qt
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 class _WidgetMetaclass( Gaffer.Signals.Trackable.__class__ ) :
 
@@ -95,7 +94,7 @@ class _WidgetMetaclass( Gaffer.Signals.Trackable.__class__ ) :
 # point. To avoid this problem a simple rule of thumb is to always connect signals to Gaffer.WeakMethod
 # instances referring to your methods.
 #
-# GafferUI.Widget subclasses are implemented using Qt widgets (using PySide or PyQt), but the public API
+# GafferUI.Widget subclasses are implemented using Qt widgets (using PySide), but the public API
 # exposed by the GafferUI classes never includes Qt functions or classes directly - this
 # allows the implementation to be changed in the future. Furthermore it allows the use
 # of the GafferUI module without learning all the Qt API. To enforce this separation,
@@ -166,7 +165,7 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 			# more details:
 			# http://stackoverflow.com/questions/32313469/stylesheet-in-pyside-not-working
 			if type( topLevelWidget ) == QtWidgets.QWidget :
-				self.__qtWidget.setAttribute( QtCore.Qt.WA_StyledBackground, True )
+				self.__qtWidget.setAttribute( QtCore.Qt.WidgetAttribute.WA_StyledBackground, True )
 		else :
 			self.__gafferWidget = topLevelWidget
 			self.__qtWidget = QtWidgets.QWidget()
@@ -182,7 +181,7 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 			# event to be posted to the event loop. Before that is dealt with, a
 			# paint event draws a layout computed without the right constraints
 			# and we get flicker when the second round of layout completes.
-			self.__qtWidget.layout().setSizeConstraint( QtWidgets.QLayout.SetMinAndMaxSize )
+			self.__qtWidget.layout().setSizeConstraint( QtWidgets.QLayout.SizeConstraint.SetMinAndMaxSize )
 			self.__qtWidget.layout().setContentsMargins( 0, 0, 0, 0 )
 			self.__qtWidget.layout().addWidget( self.__gafferWidget._qtWidget(), 0, 0 )
 
@@ -191,7 +190,7 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 		# disable different focus appearance on os x
 		## \todo If we have a style class for Widget at some point, then perhaps
 		# this should go in there.
-		self.__qtWidget.setAttribute( QtCore.Qt.WA_MacShowFocusRect, False )
+		self.__qtWidget.setAttribute( QtCore.Qt.WidgetAttribute.WA_MacShowFocusRect, False )
 
 		self._keyPressSignal = None
 		self._keyReleaseSignal = None
@@ -324,7 +323,7 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 	# parent Widgets.
 	def getEnabled( self ) :
 
-		return not self.__qtWidget.testAttribute( QtCore.Qt.WA_ForceDisabled )
+		return not self.__qtWidget.testAttribute( QtCore.Qt.WidgetAttribute.WA_ForceDisabled )
 
 	## Returns True if neither this Widget nor all its parents up to the specified
 	# ancestor have been disabled with setEnabled( False ).
@@ -382,7 +381,7 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 		if highlighted == self.getHighlighted() :
 			return
 
-		self._qtWidget().setProperty( "gafferHighlighted", GafferUI._Variant.toVariant( highlighted ) )
+		self._qtWidget().setProperty( "gafferHighlighted", highlighted )
 		self._repolish()
 
 	def getHighlighted( self ) :
@@ -390,7 +389,7 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 		if "gafferHighlighted" not in self._qtWidget().dynamicPropertyNames() :
 			return False
 
-		return GafferUI._Variant.fromVariant( self._qtWidget().property( "gafferHighlighted" ) )
+		return self._qtWidget().property( "gafferHighlighted" )
 
 	## Returns the GafferUI.Widget which is the parent for this
 	# Widget, or None if it has no parent.
@@ -805,9 +804,9 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 	def _key( cls, qtKey ) :
 
 		if not cls.__keyMapping :
-			for k in dir( QtCore.Qt ) :
+			for k in dir( QtCore.Qt.Key ) :
 				if k.startswith( "Key_" ) :
-					keyValue = int( getattr( QtCore.Qt, k ) )
+					keyValue = int( getattr( QtCore.Qt.Key, k ) )
 					keyString = k[4:]
 					cls.__keyMapping[keyValue] = keyString
 
@@ -820,11 +819,11 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 	def _buttons( qtButtons ) :
 
 		result = GafferUI.ButtonEvent.Buttons.None_
-		if qtButtons & QtCore.Qt.LeftButton :
+		if qtButtons & QtCore.Qt.MouseButton.LeftButton :
 			result |= GafferUI.ButtonEvent.Buttons.Left
-		if qtButtons & QtCore.Qt.MiddleButton :
+		if qtButtons & QtCore.Qt.MouseButton.MiddleButton :
 			result |= GafferUI.ButtonEvent.Buttons.Middle
-		if qtButtons & QtCore.Qt.RightButton :
+		if qtButtons & QtCore.Qt.MouseButton.RightButton :
 			result |= GafferUI.ButtonEvent.Buttons.Right
 
 		return GafferUI.ButtonEvent.Buttons( result )
@@ -834,11 +833,11 @@ class Widget( Gaffer.Signals.Trackable, metaclass = _WidgetMetaclass ) :
 	def _modifiers( qtModifiers ) :
 
 		modifiers = GafferUI.ModifiableEvent.Modifiers.None_
-		if qtModifiers & QtCore.Qt.ShiftModifier :
+		if qtModifiers & QtCore.Qt.KeyboardModifier.ShiftModifier :
 			modifiers = modifiers | GafferUI.ModifiableEvent.Modifiers.Shift
-		if qtModifiers & QtCore.Qt.ControlModifier :
+		if qtModifiers & QtCore.Qt.KeyboardModifier.ControlModifier :
 			modifiers = modifiers | GafferUI.ModifiableEvent.Modifiers.Control
-		if qtModifiers & QtCore.Qt.AltModifier :
+		if qtModifiers & QtCore.Qt.KeyboardModifier.AltModifier :
 			modifiers = modifiers | GafferUI.ModifiableEvent.Modifiers.Alt
 
 		return GafferUI.ModifiableEvent.Modifiers( modifiers )
@@ -995,24 +994,24 @@ class _EventFilter( QtCore.QObject ) :
 		# best solution is an event filter implemented in c++, which does the early
 		# out based on the mask and then calls through to python only if this fails.
 		self.__eventMask = set( (
-			QtCore.QEvent.ToolTip,
-			QtCore.QEvent.KeyPress,
-			QtCore.QEvent.KeyRelease,
-			QtCore.QEvent.MouseButtonPress,
-			QtCore.QEvent.MouseButtonRelease,
-			QtCore.QEvent.MouseButtonDblClick,
-			QtCore.QEvent.MouseMove,
-			QtCore.QEvent.Enter,
-			QtCore.QEvent.Leave,
-			QtCore.QEvent.Wheel,
-			QtCore.QEvent.Show,
-			QtCore.QEvent.Hide,
-			QtCore.QEvent.ContextMenu,
-			QtCore.QEvent.ParentChange,
-			QtCore.QEvent.DragEnter,
-			QtCore.QEvent.DragMove,
-			QtCore.QEvent.DragLeave,
-			QtCore.QEvent.Drop,
+			QtCore.QEvent.Type.ToolTip,
+			QtCore.QEvent.Type.KeyPress,
+			QtCore.QEvent.Type.KeyRelease,
+			QtCore.QEvent.Type.MouseButtonPress,
+			QtCore.QEvent.Type.MouseButtonRelease,
+			QtCore.QEvent.Type.MouseButtonDblClick,
+			QtCore.QEvent.Type.MouseMove,
+			QtCore.QEvent.Type.Enter,
+			QtCore.QEvent.Type.Leave,
+			QtCore.QEvent.Type.Wheel,
+			QtCore.QEvent.Type.Show,
+			QtCore.QEvent.Type.Hide,
+			QtCore.QEvent.Type.ContextMenu,
+			QtCore.QEvent.Type.ParentChange,
+			QtCore.QEvent.Type.DragEnter,
+			QtCore.QEvent.Type.DragMove,
+			QtCore.QEvent.Type.DragLeave,
+			QtCore.QEvent.Type.Drop,
 		) )
 
 	def currentButtons( self ) :
@@ -1027,12 +1026,13 @@ class _EventFilter( QtCore.QObject ) :
 		if qEventType not in self.__eventMask :
 			return False
 
+		eventTypes = QtCore.QEvent.Type
 		# we display tooltips and emit visibility events even on disabled widgets
-		if qEventType==qEvent.ToolTip :
+		if qEventType == eventTypes.ToolTip :
 
 			return self.__toolTip( qObject, qEvent )
 
-		elif qEventType==qEvent.Show or qEventType==qEvent.Hide :
+		elif qEventType == eventTypes.Show or qEventType == eventTypes.Hide :
 
 			return self.__showHide( qObject, qEvent )
 
@@ -1040,63 +1040,63 @@ class _EventFilter( QtCore.QObject ) :
 		if not qObject.isEnabled() :
 			return False
 
-		if qEventType==qEvent.KeyPress :
+		if qEventType == eventTypes.KeyPress :
 
 			return self.__keyPress( qObject, qEvent )
 
-		elif qEventType==qEvent.KeyRelease :
+		elif qEventType == eventTypes.KeyRelease :
 
 			return self.__keyRelease( qObject, qEvent )
 
-		elif qEventType==qEvent.MouseButtonPress :
+		elif qEventType == eventTypes.MouseButtonPress :
 
 			return self.__mouseButtonPress( qObject, qEvent )
 
-		elif qEventType==qEvent.MouseButtonRelease :
+		elif qEventType == eventTypes.MouseButtonRelease :
 
 			return self.__mouseButtonRelease( qObject, qEvent )
 
-		elif qEventType==qEvent.MouseButtonDblClick :
+		elif qEventType == eventTypes.MouseButtonDblClick :
 
 			return self.__mouseButtonDblClick( qObject, qEvent )
 
-		elif qEventType==qEvent.MouseMove :
+		elif qEventType == eventTypes.MouseMove :
 
 			return self.__mouseMove( qObject, qEvent )
 
-		elif qEventType==qEvent.Enter :
+		elif qEventType == eventTypes.Enter :
 
 			return self.__enter( qObject, qEvent )
 
-		elif qEventType==qEvent.Leave :
+		elif qEventType == eventTypes.Leave :
 
 			return self.__leave( qObject, qEvent )
 
-		elif qEventType==qEvent.Wheel :
+		elif qEventType == eventTypes.Wheel :
 
 			return self.__wheel( qObject, qEvent )
 
-		elif qEventType==qEvent.ContextMenu :
+		elif qEventType == eventTypes.ContextMenu :
 
 			return self.__contextMenu( qObject, qEvent )
 
-		elif qEventType==qEvent.ParentChange :
+		elif qEventType == eventTypes.ParentChange :
 
 			return self.__parentChange( qObject, qEvent )
 
-		elif qEventType==qEvent.DragEnter :
+		elif qEventType == eventTypes.DragEnter :
 
 			return self.__foreignDragEnter( qObject, qEvent )
 
-		elif qEventType==qEvent.DragMove :
+		elif qEventType == eventTypes.DragMove :
 
 			return self.__foreignDragMove( qObject, qEvent )
 
-		elif qEventType==qEvent.DragLeave :
+		elif qEventType == eventTypes.DragLeave :
 
 			return self.__foreignDragLeave( qObject, qEvent )
 
-		elif qEventType==qEvent.Drop :
+		elif qEventType == eventTypes.Drop :
 
 			return self.__foreignDrop( qObject, qEvent )
 
@@ -1355,7 +1355,7 @@ class _EventFilter( QtCore.QObject ) :
 		if self.__lastButtonPressWidget is None :
 			return False
 
-		if qEvent.buttons() == QtCore.Qt.NoButton :
+		if qEvent.buttons() == QtCore.Qt.MouseButton.NoButton :
 			# sometimes Qt can fail to give us a mouse button release event
 			# for the widget that received the mouse button press - in particular
 			# this appears to happen when a context menu is raised in the press
@@ -1400,7 +1400,7 @@ class _EventFilter( QtCore.QObject ) :
 
 	def __doDragEnterAndLeave( self, qObject, qEvent ) :
 
-		globalPosition = qEvent.globalPosition().toPoint() if Qt.__binding__ == "PySide6" else qEvent.globalPos()
+		globalPosition = qEvent.globalPosition().toPoint()
 		candidateWidget = Widget.widgetAt( imath.V2i( globalPosition.x(), globalPosition.y() ) )
 
 		newDestinationWidget = None
@@ -1504,7 +1504,7 @@ class _EventFilter( QtCore.QObject ) :
 		if self.__updateDragModifiers( qObject, qKeyEvent ) :
 			return True
 
-		if qKeyEvent.key() != QtCore.Qt.Key_G or qKeyEvent.modifiers() :
+		if qKeyEvent.key() != QtCore.Qt.Key.Key_G or qKeyEvent.modifiers() :
 			return False
 
 		if self.__dragDropEvent is None :
@@ -1522,11 +1522,11 @@ class _EventFilter( QtCore.QObject ) :
 				return
 
 			qEvent = QtGui.QMouseEvent(
-				QtCore.QEvent.MouseButtonPress,
+				QtCore.QEvent.Type.MouseButtonPress,
 				qWidget.mapFromGlobal( globalPos ),
 				globalPos,
-				QtCore.Qt.LeftButton,
-				QtCore.Qt.LeftButton,
+				QtCore.Qt.MouseButton.LeftButton,
+				QtCore.Qt.MouseButton.LeftButton,
 				qKeyEvent.modifiers()
 			)
 
@@ -1545,11 +1545,11 @@ class _EventFilter( QtCore.QObject ) :
 			qWidget = self.__dragDropEvent.sourceWidget._qtWidget()
 
 			qEvent = QtGui.QMouseEvent(
-				QtCore.QEvent.MouseButtonRelease,
+				QtCore.QEvent.Type.MouseButtonRelease,
 				qWidget.mapFromGlobal( globalPos ),
 				globalPos,
-				QtCore.Qt.LeftButton,
-				QtCore.Qt.NoButton,
+				QtCore.Qt.MouseButton.LeftButton,
+				QtCore.Qt.MouseButton.NoButton,
 				qKeyEvent.modifiers()
 			)
 
@@ -1571,7 +1571,7 @@ class _EventFilter( QtCore.QObject ) :
 
 		if qEvent.mimeData().hasUrls() :
 			data = IECore.StringVectorData( [
-				url.toString( url.PrettyDecoded | url.PreferLocalFile )
+				url.toString( QtCore.QUrl.ComponentFormattingOption.PrettyDecoded | QtCore.QUrl.UrlFormattingOption.PreferLocalFile )
 				for url in qEvent.mimeData().urls()
 			] )
 		elif qEvent.mimeData().hasText() :
@@ -1579,16 +1579,16 @@ class _EventFilter( QtCore.QObject ) :
 		else :
 			return False
 
-		position = qEvent.position().toPoint() if Qt.__binding__ == "PySide6" else qEvent.pos()
+		position = qEvent.position().toPoint()
 		cursorPos = imath.V2i( position.x(), position.y() )
 		dragDropEvent = GafferUI.DragDropEvent(
-			Widget._buttons( qEvent.buttons() if Qt.__binding__ == "PySide6" else qEvent.mouseButtons() ),
-			Widget._buttons( qEvent.buttons() if Qt.__binding__ == "PySide6" else qEvent.mouseButtons() ),
+			Widget._buttons( qEvent.buttons() ),
+			Widget._buttons( qEvent.buttons() ),
 			IECore.LineSegment3f(
 				imath.V3f( cursorPos.x, cursorPos.y, 1 ),
 				imath.V3f( cursorPos.x, cursorPos.y, 0 )
 			),
-			Widget._modifiers( qEvent.modifiers() if Qt.__binding__ == "PySide6" else qEvent.keyboardModifiers() ),
+			Widget._modifiers( qEvent.modifiers() ),
 		)
 		dragDropEvent.data = data
 		dragDropEvent.destinationWidget = None
@@ -1614,7 +1614,7 @@ class _EventFilter( QtCore.QObject ) :
 		if widget is None or widget._dragMoveSignal is None :
 			return False
 
-		position = qEvent.position().toPoint() if Qt.__binding__ == "PySide6" else qEvent.pos()
+		position = qEvent.position().toPoint()
 		cursorPos = imath.V2i( position.x(), position.y() )
 		self.__foreignDragDropEvent.line = IECore.LineSegment3f(
 			imath.V3f( cursorPos.x, cursorPos.y, 1 ),
@@ -1650,7 +1650,7 @@ class _EventFilter( QtCore.QObject ) :
 		if widget is None or widget._dropSignal is None :
 			return False
 
-		position = qEvent.position().toPoint() if Qt.__binding__ == "PySide6" else qEvent.pos()
+		position = qEvent.position().toPoint()
 		cursorPos = imath.V2i( position.x(), position.y() )
 		self.__foreignDragDropEvent.line = IECore.LineSegment3f(
 			imath.V3f( cursorPos.x, cursorPos.y, 1 ),
@@ -1679,7 +1679,7 @@ class _EventFilter( QtCore.QObject ) :
 	# long distances.
 	def __widgetSpaceLine( self, qEvent, targetWidget ) :
 
-		globalPosition = qEvent.globalPosition().toPoint() if Qt.__binding__ == "PySide6" else qEvent.globalPos()
+		globalPosition = qEvent.globalPosition().toPoint()
 		cursorPos = imath.V2i( globalPosition.x(), globalPosition.y() )
 		cursorPos -= targetWidget.bound().min()
 

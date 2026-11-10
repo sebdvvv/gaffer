@@ -44,9 +44,9 @@ import IECore
 import Gaffer
 import GafferUI
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 ## This Widget simply displays an IECore.Ramp object.
 class RampWidget( GafferUI.Widget ) :
@@ -59,7 +59,7 @@ class RampWidget( GafferUI.Widget ) :
 		# the stylesheet.
 		GafferUI.Widget.__init__( self, QtWidgets.QFrame(), **kw )
 
-		self._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Expanding )
+		self._qtWidget().setSizePolicy( QtWidgets.QSizePolicy.Policy.Expanding, QtWidgets.QSizePolicy.Policy.Expanding )
 
 		self.setDrawMode( drawMode )
 
@@ -113,11 +113,11 @@ class RampWidget( GafferUI.Widget ) :
 	def __paintEvent( self, event ) :
 
 		painter = QtGui.QPainter( self._qtWidget() )
-		painter.setRenderHint( QtGui.QPainter.Antialiasing )
+		painter.setRenderHint( QtGui.QPainter.RenderHint.Antialiasing )
 
 		o = QtWidgets.QStyleOption()
 		o.initFrom( self._qtWidget() )
-		self._qtWidget().style().drawPrimitive( QtWidgets.QStyle.PE_Widget, o, painter, self._qtWidget() )
+		self._qtWidget().style().drawPrimitive( QtWidgets.QStyle.PrimitiveElement.PE_Widget, o, painter, self._qtWidget() )
 
 		if self.__drawMode == self.DrawMode.Ramp :
 			self.__paintRamp( painter )

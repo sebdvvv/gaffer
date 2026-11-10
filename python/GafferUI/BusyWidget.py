@@ -39,9 +39,9 @@ import time
 
 import GafferUI
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 class BusyWidget( GafferUI.Widget ) :
 
@@ -103,7 +103,7 @@ class _BusyWidget( QtWidgets.QWidget ) :
 			return
 
 		painter = QtGui.QPainter( self )
-		painter.setRenderHint( QtGui.QPainter.Antialiasing )
+		painter.setRenderHint( QtGui.QPainter.RenderHint.Antialiasing )
 
 		width, height = float( self.width() ), float( self.height() )
 		centreX, centreY = width / 2, height / 2

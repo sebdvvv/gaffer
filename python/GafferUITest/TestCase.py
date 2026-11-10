@@ -38,10 +38,10 @@ import os
 import sys
 import functools
 import inspect
+import time
 import weakref
 
-from Qt import QtCore
-from Qt import QtCompat
+from PySide6 import QtCore
 
 import IECore
 
@@ -71,8 +71,8 @@ class TestCase( GafferTest.TestCase ) :
 				message
 			)
 
-		QtCompat.qInstallMessageHandler( messageHandler )
-		self.addCleanup( functools.partial( QtCompat.qInstallMessageHandler, None ) )
+		QtCore.qInstallMessageHandler( messageHandler )
+		self.addCleanup( functools.partial( QtCore.qInstallMessageHandler, None ) )
 
 		# The Mesa stack in our Docker build container doesn't currently support
 		# floating point textures. Prevent warning from causing test failures.
@@ -199,6 +199,19 @@ class TestCase( GafferTest.TestCase ) :
 
 		app = Gaffer.Application()
 		app._executeStartupFiles( "gui" )
+
+	def assertEventually( self, fn, timeout = 10.0, interval = 0.1 ) :
+
+		GafferTest.TestCase.assertEventually( self, fn, timeout, interval, self.__runEventLoop )
+
+	def __runEventLoop( self, duration ) :
+
+		end = time.time() + duration
+		while time.time() < end :
+			# Repeatedly calling `waitForIdle( 1 )` on Windows accumulates
+			# wake-up messages until Qt's message queue exceeds its quota.
+			# Waiting for additional idle events avoids this.
+			self.waitForIdle( 10 )
 
 	@staticmethod
 	def __widgetInstances() :

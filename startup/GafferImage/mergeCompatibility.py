@@ -1,7 +1,6 @@
 ##########################################################################
 #
-#  Copyright (c) 2011, John Haddon. All rights reserved.
-#  Copyright (c) 2011, Image Engine Design Inc. All rights reserved.
+#  Copyright (c) 2026, Image Engine Design Inc. All rights reserved.
 #
 #  Redistribution and use in source and binary forms, with or without
 #  modification, are permitted provided that the following conditions are
@@ -35,49 +34,7 @@
 #
 ##########################################################################
 
-import GafferUI
+import Gaffer
+import GafferImage
 
-from Qt import QtCore
-
-## PyQt and PySide differ in their bindings of functions using the
-# QVariant type. PySide doesn't expose QVariant and instead uses
-# the standard python types, whereas PyQt binds and uses the QVariant type.
-# This class provides functions to help with writing code which works
-# with either set of bindings.
-class _Variant( object ) :
-
-	## Returns value converted to a form which can be passed to a function
-	# expecting a QVariant.
-	@staticmethod
-	def toVariant( value ) :
-
-		# PyQt uses QVariant
-		if hasattr( QtCore, "QVariant" ) :
-			if value is not None :
-				return QtCore.QVariant( value )
-			else :
-				return QtCore.QVariant()
-
-		# whereas PySide just uses python values
-		return value
-
-	## Converts variant to a standard python object.
-	@staticmethod
-	def fromVariant( variant ) :
-
-		if hasattr( QtCore, "QVariant" ) and isinstance( variant, QtCore.QVariant ) :
-			t = variant.type()
-			if t == QtCore.QVariant.String :
-				return str( variant.toString() )
-			elif t == QtCore.QVariant.Double :
-				return variant.toDouble()[0]
-			elif t == QtCore.QVariant.Int :
-				return variant.toInt()[0]
-			elif t == QtCore.QVariant.Bool :
-				return variant.toBool()
-			elif t == QtCore.QVariant.Invalid :
-				return None
-			else :
-				raise ValueError( "Unsupported QVariant type \"%s\"" % variant.typeName() )
-		else :
-			return variant
+Gaffer.Metadata.registerValue( GafferImage.Merge, "compatibility:childAlias:mode", "inputMode" )

@@ -116,7 +116,7 @@ options.Add(
 options.Add(
 	"CXXSTD",
 	"The C++ standard to build against. A minimum of C++17 is required.",
-	"c++17",
+	"c++20",
 )
 
 options.Add(
@@ -475,10 +475,7 @@ if env["PLATFORM"] != "win32" :
 
 		env.Append(
 			CXXFLAGS = [ "-Wno-unused-local-typedef" ],
-			# XCode 16 warns about deprecations in fmtlib. Overriding `FMT_DEPRECATED`
-			# allows us to remove the [[deprecated]] attributes and still build with
-			# `-Werror,-Wdeprecated-declarations`.
-			CPPDEFINES = [ ( "FMT_DEPRECATED", "" ) ]
+			CPPDEFINES = [ "FMT_SHARED" ],
 		)
 
 		# Turn off the parts of `-Wextra` that we don't like.
@@ -584,6 +581,7 @@ else:
 			"/D_USE_MATH_DEFINES",  # Required when permissive mode is off, for defining constants like M_PI used by OpenVDB
 			"/std:$CXXSTD",
 			"/DHAVE_SNPRINTF",  # Fix a legacy issue for MSVC versions < 2019
+			"/utf-8", # Required for fmtlib
 		]
 	)
 
@@ -734,10 +732,18 @@ def checkQtVersion( context ) :
 	"""
 
 	result = context.TryRun( program, ".cpp" )
-	if result[0] :
-		context.sconf.env["QT_VERSION"] = result[1]
+	if not result[0] :
+		context.Result( False )
+		return False
 
-	context.Result( result[0] )
+	version = int( result[1] )
+	if version < 6 :
+		context.Result( "found Qt {}, but Qt 6 is required".format( version ) )
+		return False
+
+	context.sconf.env["QT_VERSION"] = result[1]
+
+	context.Result( True )
 	return result[0]
 
 conf = Configure(
@@ -761,7 +767,7 @@ if haveInkscape:
 haveSphinx = conf.checkSphinx()
 
 if not conf.checkQtVersion() :
-	sys.stderr.write( "Qt not found\n" )
+	sys.stderr.write( "Qt 6 not found\n" )
 	Exit( 1 )
 
 ###############################################################################################
@@ -1362,10 +1368,13 @@ libraries = {
 				"GafferScene", "3delight", "IECoreImage$CORTEX_LIB_SUFFIX", "IECoreScene$CORTEX_LIB_SUFFIX", "IECoreVDB$CORTEX_LIB_SUFFIX",
 				"openvdb$VDB_LIB_SUFFIX", "OpenImageIO_Util$OIIO_LIB_SUFFIX", "oslquery$OSL_LIB_SUFFIX"
 			],
+			# Suppress warning "The file contains a character illegal in the current source character set" from dlInterface.h.
+			"CXXFLAGS" : [ "/wd4828" ] if env["PLATFORM"] == "win32" else [],
 		},
 		"pythonEnvAppends" : {
 			"CPPPATH" : [ "$DELIGHT_ROOT/include" ],
 			"LIBS" : [ "IECoreScene$CORTEX_LIB_SUFFIX", "IECoreDelight" ],
+			"CXXFLAGS" : [ "/wd4828" ] if env["PLATFORM"] == "win32" else [],
 		},
 		"requiredOptions" : [ "DELIGHT_ROOT" ],
 	},

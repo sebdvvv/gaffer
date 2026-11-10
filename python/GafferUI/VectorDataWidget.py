@@ -45,11 +45,9 @@ import GafferUI
 from GafferUI.ColorSwatch import _Checker
 from ._TableView import _TableView
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
-from Qt import QtCompat
-import Qt
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 ## The VectorDataWidget provides a table view for the contents of
 # one or more IECore VectorData instances.
@@ -103,15 +101,15 @@ class VectorDataWidget( GafferUI.Widget ) :
 		self.__tableView.horizontalHeader().setMinimumSectionSize( 70 )
 
 		self.__tableView.verticalHeader().setVisible( showIndices )
-		QtCompat.setSectionResizeMode( self.__tableView.verticalHeader(), QtWidgets.QHeaderView.Fixed )
+		self.__tableView.verticalHeader().setSectionResizeMode( QtWidgets.QHeaderView.ResizeMode.Fixed )
 
 		self.__tableView.setHorizontalScrollBarPolicy( GafferUI.ScrollMode._toQt( horizontalScrollMode ) )
 		self.__tableView.setVerticalScrollBarPolicy( GafferUI.ScrollMode._toQt( verticalScrollMode ) )
 
-		self.__tableView.setSelectionBehavior( QtWidgets.QAbstractItemView.SelectItems )
+		self.__tableView.setSelectionBehavior( QtWidgets.QAbstractItemView.SelectionBehavior.SelectItems )
 		self.__tableView.setCornerButtonEnabled( False )
 
-		self.__tableView.setContextMenuPolicy( QtCore.Qt.CustomContextMenu )
+		self.__tableView.setContextMenuPolicy( QtCore.Qt.ContextMenuPolicy.CustomContextMenu )
 		self.__tableView.customContextMenuRequested.connect( Gaffer.WeakMethod( self.__contextMenu ) )
 
 		self.__tableView.verticalHeader().setDefaultSectionSize( 20 )
@@ -189,7 +187,7 @@ class VectorDataWidget( GafferUI.Widget ) :
 		if highlighted == self.getHighlighted() :
 			return
 
-		self.__tableView.setProperty( "gafferHighlighted", GafferUI._Variant.toVariant( highlighted ) )
+		self.__tableView.setProperty( "gafferHighlighted", highlighted )
 
 		GafferUI.Widget.setHighlighted( self, highlighted )
 
@@ -198,12 +196,12 @@ class VectorDataWidget( GafferUI.Widget ) :
 		if errored == self.getErrored() :
 			return
 
-		self.__tableView.setProperty( "gafferError", GafferUI._Variant.toVariant( bool( errored ) ) )
+		self.__tableView.setProperty( "gafferError", bool( errored ) )
 		self._repolish()
 
 	def getErrored( self ) :
 
-		return GafferUI._Variant.fromVariant( self.__tableView.property( "gafferError" ) ) or False
+		return self.__tableView.property( "gafferError" ) or False
 
 	def addButton( self ) :
 
@@ -245,20 +243,19 @@ class VectorDataWidget( GafferUI.Widget ) :
 					haveResizeableContents = haveResizeableContents or canStretch
 					columnIndex += 1
 
-			QtCompat.setSectionResizeMode(
-				self.__tableView.horizontalHeader(),
-				QtWidgets.QHeaderView.ResizeToContents if haveResizeableContents else QtWidgets.QHeaderView.Fixed
+			self.__tableView.horizontalHeader().setSectionResizeMode(
+				QtWidgets.QHeaderView.ResizeMode.ResizeToContents if haveResizeableContents else QtWidgets.QHeaderView.ResizeMode.Fixed
 			)
 
 			self.__tableView.horizontalHeader().setStretchLastSection( canStretch )
-			horizontalSizePolicy = QtWidgets.QSizePolicy.Expanding
-			if self.__tableView.horizontalScrollMode() == QtCore.Qt.ScrollBarAlwaysOff and not canStretch :
-				horizontalSizePolicy = QtWidgets.QSizePolicy.Fixed
+			horizontalSizePolicy = QtWidgets.QSizePolicy.Policy.Expanding
+			if self.__tableView.horizontalScrollMode() == QtCore.Qt.ScrollBarPolicy.ScrollBarAlwaysOff and not canStretch :
+				horizontalSizePolicy = QtWidgets.QSizePolicy.Policy.Fixed
 
 			self.__tableView.setSizePolicy(
 				QtWidgets.QSizePolicy(
 					horizontalSizePolicy,
-					QtWidgets.QSizePolicy.Maximum
+					QtWidgets.QSizePolicy.Policy.Maximum
 				)
 			)
 
@@ -501,14 +498,14 @@ class VectorDataWidget( GafferUI.Widget ) :
 
 		if topLeft == bottomRight and self.__tableView.selectionModel().isSelected( topLeft ) :
 			self.__propagatingDataChangesToSelection = True
-			valueToPropagate = self.__model.data( topLeft, QtCore.Qt.EditRole )
+			valueToPropagate = self.__model.data( topLeft, QtCore.Qt.ItemDataRole.EditRole )
 			for index in self.__tableView.selectedIndexes() :
 				if index == topLeft :
 					continue
 				# we have to ignore exceptions, as the items we're setting might
 				# have a different data type than the value we're passing.
 				with IECore.IgnoredExceptions( Exception ) :
-					self.__model.setData( index, valueToPropagate, QtCore.Qt.EditRole )
+					self.__model.setData( index, valueToPropagate, QtCore.Qt.ItemDataRole.EditRole )
 			self.__propagatingDataChangesToSelection = False
 
 		self.__emitDataChangedSignal()
@@ -609,7 +606,7 @@ class VectorDataWidget( GafferUI.Widget ) :
 
 		self.__tableView.selectionModel().select(
 			selection,
-			QtCore.QItemSelectionModel.ClearAndSelect | QtCore.QItemSelectionModel.Rows
+			QtCore.QItemSelectionModel.SelectionFlag.ClearAndSelect | QtCore.QItemSelectionModel.SelectionFlag.Rows
 		)
 
 		# Scroll so the newly added item is visible, and
@@ -617,7 +614,7 @@ class VectorDataWidget( GafferUI.Widget ) :
 		# be edited with the keyboard immediately.
 
 		self.__tableView.scrollToBottom()
-		self.__tableView.setFocus( QtCore.Qt.OtherFocusReason )
+		self.__tableView.setFocus( QtCore.Qt.FocusReason.OtherFocusReason )
 
 		# Let everyone know about this wondrous event.
 
@@ -802,12 +799,12 @@ class VectorDataWidget( GafferUI.Widget ) :
 		)
 
 		qEvent = QtGui.QMouseEvent(
-			QtCore.QEvent.MouseButtonPress,
+			QtCore.QEvent.Type.MouseButtonPress,
 			point,
 			self.__tableView.viewport().mapToGlobal( point ),
-			QtCore.Qt.LeftButton,
-			QtCore.Qt.LeftButton,
-			QtCore.Qt.NoModifier
+			QtCore.Qt.MouseButton.LeftButton,
+			QtCore.Qt.MouseButton.LeftButton,
+			QtCore.Qt.KeyboardModifier.NoModifier
 		)
 
 		try :
@@ -927,8 +924,8 @@ class _Model( QtCore.QAbstractTableModel ) :
 			# hope for the best.
 			return None
 
-		if role == QtCore.Qt.DisplayRole :
-			if orientation == QtCore.Qt.Horizontal :
+		if role == QtCore.Qt.ItemDataRole.DisplayRole :
+			if orientation == QtCore.Qt.Orientation.Horizontal :
 				column = self.__columns[section]
 				if self.__header is not None :
 					result = self.__header[self.columnToDataIndex(section)[0]]
@@ -937,54 +934,54 @@ class _Model( QtCore.QAbstractTableModel ) :
 						result += ( "." + suffix ) if suffix is not None else ""
 				else :
 					result = column.accessor.headerLabel( column.relativeColumnIndex )
-				return GafferUI._Variant.toVariant( result )
+				return result
 			else :
-				return GafferUI._Variant.toVariant( section )
-		elif role == QtCore.Qt.ToolTipRole :
-			if orientation == QtCore.Qt.Horizontal and self.__toolTips is not None :
-				return GafferUI._Variant.toVariant( self.__toolTips[self.columnToDataIndex(section)[0]] )
+				return section
+		elif role == QtCore.Qt.ItemDataRole.ToolTipRole :
+			if orientation == QtCore.Qt.Orientation.Horizontal and self.__toolTips is not None :
+				return self.__toolTips[self.columnToDataIndex(section)[0]]
 
-		return GafferUI._Variant.toVariant( None )
+		return None
 
 	def flags( self, index ) :
 
 		result = (
-			QtCore.Qt.ItemIsSelectable |
-			QtCore.Qt.ItemIsEnabled |
-			QtCore.Qt.ItemIsDragEnabled
+			QtCore.Qt.ItemFlag.ItemIsSelectable |
+			QtCore.Qt.ItemFlag.ItemIsEnabled |
+			QtCore.Qt.ItemFlag.ItemIsDragEnabled
 		)
 
 		if self.__editable :
 			if self.__columnEditability is None or self.__columnEditability[index.column()] :
-				result |= QtCore.Qt.ItemIsEditable
+				result |= QtCore.Qt.ItemFlag.ItemIsEditable
 
 		return result
 
 	def data( self, index, role ) :
 
 		column = self.__columns[index.column()]
-		if role == QtCore.Qt.BackgroundRole :
+		if role == QtCore.Qt.ItemDataRole.BackgroundRole :
 
 			if self.columnToDataIndex( index.column() )[0] % 2 == 0:
-				return  GafferUI._Variant.toVariant( GafferUI._StyleSheet.styleColor("background")  )
+				return  GafferUI._StyleSheet.styleColor( "background" )
 			else:
-				return  GafferUI._Variant.toVariant( GafferUI._StyleSheet.styleColor("backgroundAlt") )
+				return  GafferUI._StyleSheet.styleColor( "backgroundAlt" )
 
 		if (
-			role == QtCore.Qt.DisplayRole or
-			role == QtCore.Qt.EditRole
+			role == QtCore.Qt.ItemDataRole.DisplayRole or
+			role == QtCore.Qt.ItemDataRole.EditRole
 		) :
 			if index.row() < len( column.accessor.data() ) :
 				return column.accessor.getElement( index.row(), column.relativeColumnIndex )
 
-		return GafferUI._Variant.toVariant( None )
+		return None
 
 	def setData( self, index, value, role ) :
 
-		if role == QtCore.Qt.EditRole :
+		if role == QtCore.Qt.ItemDataRole.EditRole :
 			column = self.__columns[index.column()]
 			column.accessor.setElement( index.row(), column.relativeColumnIndex, value )
-			self.dataChanged.emit( index, index, [ QtCore.Qt.DisplayRole, QtCore.Qt.EditRole ] )
+			self.dataChanged.emit( index, index, [ QtCore.Qt.ItemDataRole.DisplayRole, QtCore.Qt.ItemDataRole.EditRole ] )
 
 		return True
 
@@ -1015,11 +1012,11 @@ class _DataAccessor( object ) :
 
 	def setElement( self, rowIndex, columnIndex, value ) :
 
-		self.data()[rowIndex] = GafferUI._Variant.fromVariant( value )
+		self.data()[rowIndex] = value
 
 	def getElement( self, rowIndex, columnIndex ) :
 
-		return GafferUI._Variant.toVariant( self.data()[rowIndex] )
+		return self.data()[rowIndex]
 
 	# Factory methods
 	#################################
@@ -1073,12 +1070,12 @@ class _CompoundDataAccessor( _DataAccessor ) :
 	def setElement( self, rowIndex, columnIndex, value ) :
 
 		element = self.data()[rowIndex]
-		element[columnIndex] = GafferUI._Variant.fromVariant( value )
+		element[columnIndex] = value
 		self.data()[rowIndex] = element
 
 	def getElement( self, rowIndex, columnIndex ) :
 
-		return GafferUI._Variant.toVariant( self.data()[rowIndex][columnIndex] )
+		return self.data()[rowIndex][columnIndex]
 
 _DataAccessor.registerType( IECore.V2iVectorData.staticTypeId(), _CompoundDataAccessor )
 _DataAccessor.registerType( IECore.V2fVectorData.staticTypeId(), _CompoundDataAccessor )
@@ -1099,14 +1096,14 @@ class _ColorDataAccessor( _CompoundDataAccessor ) :
 		if columnIndex < self.numColumns() - 1 :
 			_CompoundDataAccessor.setElement( self, rowIndex, columnIndex, value )
 		else :
-			self.data()[rowIndex] = GafferUI._Variant.fromVariant( value )
+			self.data()[rowIndex] = value
 
 	def getElement( self, rowIndex, columnIndex ) :
 
 		if columnIndex < self.numColumns() - 1 :
 			return _CompoundDataAccessor.getElement( self, rowIndex, columnIndex )
 		else :
-			return GafferUI._Variant.toVariant( self.data()[rowIndex] )
+			return self.data()[rowIndex]
 
 class _Color3fDataAccessor( _ColorDataAccessor ) :
 
@@ -1157,13 +1154,13 @@ class _QuatDataAccessor( _CompoundDataAccessor ) :
 
 		v = self.data()[rowIndex]
 		if columnIndex == 0:
-			return GafferUI._Variant.toVariant( v.r() )
+			return v.r()
 		if columnIndex == 1:
-			return GafferUI._Variant.toVariant( v.v()[0] )
+			return v.v()[0]
 		if columnIndex == 2:
-			return GafferUI._Variant.toVariant( v.v()[1] )
+			return v.v()[1]
 		if columnIndex == 3:
-			return GafferUI._Variant.toVariant( v.v()[2] )
+			return v.v()[2]
 
 _DataAccessor.registerType( IECore.QuatfVectorData.staticTypeId(), _QuatDataAccessor )
 _DataAccessor.registerType( IECore.QuatdVectorData.staticTypeId(), _QuatDataAccessor )
@@ -1189,7 +1186,7 @@ class _BoxDataAccessor( _CompoundDataAccessor ) :
 	def setElement( self, rowIndex, columnIndex, value ) :
 
 		element = self.data()[rowIndex]
-		element[columnIndex] = GafferUI._Variant.fromVariant( value )
+		element[columnIndex] = value
 		self.data()[rowIndex] = element
 
 	def getElement( self, rowIndex, columnIndex ) :
@@ -1200,9 +1197,9 @@ class _BoxDataAccessor( _CompoundDataAccessor ) :
 		minMax = (columnIndex - index) / dimension
 		item = self.data()[rowIndex]
 		if minMax == 0:
-			return GafferUI._Variant.toVariant( item.min()[index] )
+			return item.min()[index]
 		else:
-			return GafferUI._Variant.toVariant( item.max()[index] )
+			return item.max()[index]
 
 _DataAccessor.registerType( IECore.Box2iVectorData.staticTypeId(), _BoxDataAccessor )
 _DataAccessor.registerType( IECore.Box2fVectorData.staticTypeId(), _BoxDataAccessor )
@@ -1234,7 +1231,7 @@ class _MatrixDataAccessor( _DataAccessor ) :
 	def setElement( self, rowIndex, columnIndex, value ) :
 
 		element = self.data()[rowIndex]
-		element[columnIndex] = GafferUI._Variant.fromVariant( value )
+		element[columnIndex] = value
 		self.data()[rowIndex] = element
 
 	def getElement( self, rowIndex, columnIndex ) :
@@ -1248,7 +1245,7 @@ class _MatrixDataAccessor( _DataAccessor ) :
 		x = (columnIndex - y) // dimension
 		item = self.data()[rowIndex]
 
-		return GafferUI._Variant.toVariant( item[x][y] )
+		return item[x][y]
 
 _DataAccessor.registerType( IECore.M33fVectorData.staticTypeId(), _MatrixDataAccessor )
 _DataAccessor.registerType( IECore.M33dVectorData.staticTypeId(), _MatrixDataAccessor )
@@ -1275,7 +1272,7 @@ class _InternedStringDataAccessor( _StringDataAccessor ) :
 
 	def getElement( self, rowIndex, columnIndex ) :
 
-		return GafferUI._Variant.toVariant( self.data()[rowIndex].value() )
+		return self.data()[rowIndex].value()
 
 _DataAccessor.registerType( IECore.InternedStringVectorData.staticTypeId(), _InternedStringDataAccessor )
 
@@ -1335,14 +1332,14 @@ class _Delegate( QtWidgets.QStyledItemDelegate ) :
 	def setEditorData( self, editor, index ) :
 
 		if self.__editor is not None :
-			self.__editor.setValue( GafferUI._Variant.fromVariant( index.data() ) )
+			self.__editor.setValue( index.data() )
 		else :
 			QtWidgets.QStyledItemDelegate.setEditorData( self, editor, index )
 
 	def setModelData( self, editor, model, index ) :
 
 		if self.__editor is not None :
-			model.setData( index, GafferUI._Variant.toVariant( self.__editor.getValue() ), QtCore.Qt.EditRole )
+			model.setData( index, self.__editor.getValue(), QtCore.Qt.ItemDataRole.EditRole )
 		else :
 			QtWidgets.QStyledItemDelegate.setModelData( self, editor, model, index )
 
@@ -1351,12 +1348,12 @@ class _Delegate( QtWidgets.QStyledItemDelegate ) :
 		if QtWidgets.QStyledItemDelegate.eventFilter( self, object, event ) :
 			return True
 
-		if event.type() == event.Hide and self.__editor is not None :
+		if event.type() == QtCore.QEvent.Type.Hide and self.__editor is not None :
 			# custom editors may hide themselves to indicate that editing
 			# is complete. when this happens we are responsible for carrying
 			# out this completion.
 			self.commitData.emit( self.__editor._qtWidget() )
-			self.closeEditor.emit( self.__editor._qtWidget(), self.NoHint )
+			self.closeEditor.emit( self.__editor._qtWidget(), QtWidgets.QAbstractItemDelegate.EndEditHint.NoHint )
 
 		return False
 
@@ -1409,7 +1406,7 @@ class _NumericDelegate( _Delegate ) :
 
 	def _createEditorInternal( self, index ) :
 
-		return GafferUI.NumericWidget( GafferUI._Variant.fromVariant( index.data() ) )
+		return GafferUI.NumericWidget( index.data() )
 
 _Delegate.registerType( IECore.HalfVectorData.staticTypeId(), _NumericDelegate )
 _Delegate.registerType( IECore.FloatVectorData.staticTypeId(), _NumericDelegate )
@@ -1469,20 +1466,11 @@ class _ColorDelegate( _Delegate ) :
 		if isinstance( value, float ) :
 			_Delegate.paint( self, painter, option, index )
 		else :
-			# in PyQt, option is passed to us correctly as a QStyleOptionViewItemV4,
-			# but in PySide it is merely a QStyleOptionViewItem and we must "cast" it.
-			if hasattr( QtGui, "QStyleOptionViewItemV4" ) :
-				option = QtGui.QStyleOptionViewItemV4( option )
-
-			# in PyQt, we can access the widget with option.widget, but in PySide it
-			# is always None for some reason, so we jump through some hoops to get the
-			# widget via our parent.
-			widget = QtCore.QObject.parent( self.parent() )
 
 			# draw the background
 
-			widget.style().drawControl( QtWidgets.QStyle.CE_ItemViewItem, option, painter, widget )
-			displayTransform = GafferUI.Widget._owner( widget ).displayTransform()
+			option.widget.style().drawControl( QtWidgets.QStyle.ControlElement.CE_ItemViewItem, option, painter, option.widget )
+			displayTransform = GafferUI.Widget._owner( option.widget ).displayTransform()
 			transformedColor = displayTransform( value )
 
 			opaqueCheckerColor0 = GafferUI.Widget._qtColor( transformedColor )
@@ -1539,11 +1527,11 @@ class _ColorDelegate( _Delegate ) :
 		if self.__colorChooser is None :
 			_Delegate.setModelData( self, editor, model, index )
 		else :
-			model.setData( index, self.__colorChooser.getColor(), QtCore.Qt.EditRole )
+			model.setData( index, self.__colorChooser.getColor(), QtCore.Qt.ItemDataRole.EditRole )
 
 	def __colorData( self, index ) :
 
-		return index.model().data( index, QtCore.Qt.DisplayRole )
+		return index.model().data( index, QtCore.Qt.ItemDataRole.DisplayRole )
 
 _Delegate.registerType( IECore.Color3fVectorData.staticTypeId(), _ColorDelegate )
 _Delegate.registerType( IECore.Color4fVectorData.staticTypeId(), _ColorDelegate )
@@ -1556,33 +1544,23 @@ class _BoolDelegate( _Delegate ) :
 
 	def paint( self, painter, option, index ) :
 
-		# in PyQt, option is passed to us correctly as a QStyleOptionViewItemV4,
-		# but in PySide it is merely a QStyleOptionViewItem and we must "cast" it.
-		if hasattr( QtGui, "QStyleOptionViewItemV4" ) :
-			option = QtGui.QStyleOptionViewItemV4( option )
-
-		# in PyQt, we can access the widget with option.widget, but in PySide it
-		# is always None for some reason, so we jump through some hoops to get the
-		# widget via our parent.
-		widget = QtCore.QObject.parent( self.parent() )
-
 		# draw the background
 
-		widget.style().drawControl( QtWidgets.QStyle.CE_ItemViewItem, option, painter, widget )
+		option.widget.style().drawControl( QtWidgets.QStyle.ControlElement.CE_ItemViewItem, option, painter, option.widget )
 
 		# draw the checkbox.
 
 		styleOption = QtWidgets.QStyleOptionButton()
 		styleOption.state = option.state
-		styleOption.state |= QtWidgets.QStyle.State_Enabled
+		styleOption.state |= QtWidgets.QStyle.StateFlag.State_Enabled
 
 		if self.__toBool( index ) :
-			styleOption.state |= QtWidgets.QStyle.State_On
+			styleOption.state |= QtWidgets.QStyle.StateFlag.State_On
 		else :
-			styleOption.state |= QtWidgets.QStyle.State_Off
+			styleOption.state |= QtWidgets.QStyle.StateFlag.State_Off
 
-		styleOption.rect = self.__checkBoxRect( widget, option.rect )
-		widget.style().drawControl( QtWidgets.QStyle.CE_CheckBox, styleOption, painter, widget )
+		styleOption.rect = self.__checkBoxRect( option.widget, option.rect )
+		option.widget.style().drawControl( QtWidgets.QStyle.ControlElement.CE_CheckBox, styleOption, painter, option.widget )
 
 	def createEditor( self, parent, option, index ) :
 
@@ -1590,25 +1568,24 @@ class _BoolDelegate( _Delegate ) :
 
 	def editorEvent( self, event, model, option, index ) :
 
-		if not ( index.flags() & QtCore.Qt.ItemIsEditable ) :
+		if not ( index.flags() & QtCore.Qt.ItemFlag.ItemIsEditable ) :
 			return False
 
-		if event.type()==QtCore.QEvent.MouseButtonDblClick :
+		if event.type() == QtCore.QEvent.Type.MouseButtonDblClick :
 			# eat event so an editor doesn't get created
 			return True
-		elif event.type()==QtCore.QEvent.MouseButtonPress :
+		elif event.type() == QtCore.QEvent.Type.MouseButtonPress :
 			# eat event so row isn't selected
-			widget = QtCore.QObject.parent( self.parent() )
-			rect = self.__checkBoxRect( widget, option.rect )
-			position = event.position().toPoint() if Qt.__binding__ == "PySide6" else event.pos()
-			if event.button() == QtCore.Qt.LeftButton and rect.contains( position ) :
+			rect = self.__checkBoxRect( option.widget, option.rect )
+			position = event.position().toPoint()
+			if event.button() == QtCore.Qt.MouseButton.LeftButton and rect.contains( position ) :
 				checked = self.__toBool( index )
-				model.setData( index, not checked, QtCore.Qt.EditRole )
+				model.setData( index, not checked, QtCore.Qt.ItemDataRole.EditRole )
 				return True
-		elif event.type()==QtCore.QEvent.KeyPress :
-			if event.key() in ( QtCore.Qt.Key_Return, QtCore.Qt.Key_Enter ) :
+		elif event.type() == QtCore.QEvent.Type.KeyPress :
+			if event.key() in ( QtCore.Qt.Key.Key_Return, QtCore.Qt.Key.Key_Enter ) :
 				checked = self.__toBool( index )
-				model.setData( index, not checked, QtCore.Qt.EditRole )
+				model.setData( index, not checked, QtCore.Qt.ItemDataRole.EditRole )
 				return True
 
 		return False
@@ -1616,7 +1593,7 @@ class _BoolDelegate( _Delegate ) :
 	def __checkBoxRect( self, widget, viewItemRect ) :
 
 		checkBoxStyleOption = QtWidgets.QStyleOptionButton()
-		r = widget.style().subElementRect( QtWidgets.QStyle.SE_CheckBoxIndicator, checkBoxStyleOption )
+		r = widget.style().subElementRect( QtWidgets.QStyle.SubElement.SE_CheckBoxIndicator, checkBoxStyleOption )
 
 		return QtCore.QRect(
 			viewItemRect.center() - ( QtCore.QPoint( r.width(), r.height() ) / 2 ),
@@ -1625,7 +1602,7 @@ class _BoolDelegate( _Delegate ) :
 
 	def __toBool( self, index ) :
 
-		return GafferUI._Variant.fromVariant( index.model().data( index, QtCore.Qt.DisplayRole ) )
+		return index.model().data( index, QtCore.Qt.ItemDataRole.DisplayRole )
 
 _Delegate.registerType( IECore.BoolVectorData.staticTypeId(), _BoolDelegate )
 

@@ -41,8 +41,8 @@ import imath
 import Gaffer
 import GafferUI
 
-from Qt import QtCore
-from Qt import QtGui
+from PySide6 import QtCore
+from PySide6 import QtGui
 
 class PopupWindow( GafferUI.Window ) :
 
@@ -52,8 +52,8 @@ class PopupWindow( GafferUI.Window ) :
 
 		self.__popupParent = None
 
-		self._qtWidget().setWindowFlags( QtCore.Qt.Popup | QtCore.Qt.FramelessWindowHint )
-		self._qtWidget().setAttribute( QtCore.Qt.WA_TranslucentBackground )
+		self._qtWidget().setWindowFlags( QtCore.Qt.WindowType.Popup | QtCore.Qt.WindowType.FramelessWindowHint )
+		self._qtWidget().setAttribute( QtCore.Qt.WidgetAttribute.WA_TranslucentBackground )
 		self._qtWidget().paintEvent = Gaffer.WeakMethod( self.__paintEvent, fallbackResult = None )
 
 		self.keyPressSignal().connect( Gaffer.WeakMethod( self.__keyPress ) )
@@ -97,7 +97,7 @@ class PopupWindow( GafferUI.Window ) :
 	def __paintEvent( self, event ) :
 
 		painter = QtGui.QPainter( self._qtWidget() )
-		painter.setRenderHint( QtGui.QPainter.Antialiasing )
+		painter.setRenderHint( QtGui.QPainter.RenderHint.Antialiasing )
 
 		painter.setBrush( QtGui.QColor( 35, 35, 35 ) )
 		painter.setPen( QtGui.QColor( 0, 0, 0, 0 ) )

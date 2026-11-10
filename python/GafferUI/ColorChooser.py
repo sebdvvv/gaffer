@@ -48,9 +48,9 @@ import IECore
 import Gaffer
 import GafferUI
 
-from Qt import QtCore
-from Qt import QtGui
-from Qt import QtWidgets
+from PySide6 import QtCore
+from PySide6 import QtGui
+from PySide6 import QtWidgets
 
 __tmiToRGBMatrix = imath.M33f(
 	-1.0 / 2.0, 0.0, 1.0 / 2.0,
@@ -103,7 +103,7 @@ _ranges = {
 
 def _drawIndicator( painter, position ) :
 
-	painter.setBrush( QtCore.Qt.transparent )
+	painter.setBrush( QtCore.Qt.GlobalColor.transparent )
 
 	pen = QtGui.QPen( QtGui.QColor( 0, 0, 0, 255 ) )
 	pen.setWidth( 1 )
@@ -804,8 +804,8 @@ class _ColorField( GafferUI.Widget ) :
 	def __paintEvent( self, event ) :
 
 		painter = QtGui.QPainter( self._qtWidget() )
-		painter.setRenderHint( QtGui.QPainter.Antialiasing )
-		painter.setRenderHint( QtGui.QPainter.SmoothPixmapTransform)
+		painter.setRenderHint( QtGui.QPainter.RenderHint.Antialiasing )
+		painter.setRenderHint( QtGui.QPainter.RenderHint.SmoothPixmapTransform)
 
 		if self.__useWheel() :
 			mask = QtGui.QPainterPath()
@@ -839,7 +839,7 @@ class _ColorFieldRowLayout( QtWidgets.QLayout ) :
 
 	def expandingDirections( self ) :
 
-		return QtCore.Qt.Orientations( QtCore.Qt.Orientation( 0 ) )
+		return QtCore.Qt.Orientation( 0 )
 
 	def itemAt( self, index ) :
 
@@ -900,7 +900,7 @@ class _ColorFieldRowContainer( GafferUI.ContainerWidget ) :
 		GafferUI.ContainerWidget.__init__( self, QtWidgets.QWidget(), **kw )
 
 		self.__qtLayout = _ColorFieldRowLayout()
-		self.__qtLayout.setSizeConstraint( QtWidgets.QLayout.SetMinAndMaxSize )
+		self.__qtLayout.setSizeConstraint( QtWidgets.QLayout.SizeConstraint.SetMinAndMaxSize )
 
 		self._qtWidget().setLayout( self.__qtLayout )
 
@@ -978,7 +978,7 @@ class ColorChooser( GafferUI.Widget ) :
 						)
 						# Remove the `gafferBorderStyle` property to remove padding that `_StyleSheet` adds. This way
 						# the icons connect without gaps.
-						self.__channelFrames[component]._qtWidget().setProperty( "gafferBorderStyle", GafferUI._Variant.toVariant( None ) )
+						self.__channelFrames[component]._qtWidget().setProperty( "gafferBorderStyle", None )
 
 						self.__channelLabels[component] = GafferUI.Label(
 							component.capitalize(),
