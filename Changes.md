@@ -90,6 +90,7 @@ Breaking Changes
 - GafferUI :
   - Removed legacy compatibility code for PySide2 and PyQt.
   - Removed `_Variant` class.
+- MeshSegments : Changed behaviour when setting `connectivity` to "". Previously, this used vertex topology, now it passes through the input unchanged. This aligns better with other geometry processing nodes.
 
 Build
 -----
@@ -117,7 +118,12 @@ Build
 - ZLib : Updated to version 1.3.1.
 - Windows : Updated Windows SDK to version 10.0.22621.0.
 
-1.7.x.x (relative to 1.7.6.0)
+1.7.x.x (relative to 1.7.7.0)
+=======
+
+
+
+1.7.7.0 (relative to 1.7.6.0)
 =======
 
 Improvements
@@ -127,6 +133,7 @@ Improvements
 - MeshSegments : Added `ignoreMissing` plug.
 - PathListingWidget, SpreadsheetUI : Header text is now elided rather than truncated. A default tooltip now shows the full text of the header.
 - LightEditor, RenderPassEditor, AttributeEditor : Added `compactColumns` toggle. When on, columns are sized based on their values instead of also considering the header text, so that more columns may fit on screen at once. Columns too narrow to show the header display an abbreviated form, such as `Max Bounces` becoming `MB`.
+- PaintTool : Improved performance during a paint stroke when painting many objects.
 
 Fixes
 -----
@@ -136,6 +143,9 @@ Fixes
 - Editor : Exceptions thrown by slots connected to `instanceCreatedSignal()` are now caught and reported, rather than stopping execution.
 - RenderMan : Fixed non-deterministic ordering of output definitions.
 - Viewer : Fixed rendering of volumes and camera-visible environment lights in the raytraced viewport (#4783).
+- PaintTool : The Viewer's display transform is now correctly applied to the painted values.
+- Arnold : Fixed interactive updates to USD RectLights when the input network to `color` or the `texture:file` parameter were modified (#7247).
+- SetEditor : Fixed UI responsiveness bug when using "Hide Empty Sets".
 
 API
 ---
@@ -631,7 +641,12 @@ Build
 - TBB : Updated to version 2021.13.0.
 - USD : Updated to version 26.05.
 
-1.6.21.x (relative to 1.6.21.7)
+1.6.21.x (relative to 1.6.21.8)
+========
+
+
+
+1.6.21.8 (relative to 1.6.21.7)
 ========
 
 Fixes
